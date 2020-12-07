@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-from typing import Dict, NamedTuple
+from collections import defaultdict
+from typing import Dict, NamedTuple, Set
 
 
 class Bag(NamedTuple):
-    color: str
+    outer_color: str
     inner: Dict[str, int]
 
 
@@ -29,6 +30,20 @@ def parse(line: str) -> Bag:
     return Bag(outer_color, inner)
 
 
+outers: Dict[str, Set[str]] = defaultdict(lambda: set())
 for line in open('input.txt', 'r', encoding='ascii'):
-    b = parse(line.strip())
-    print(b)
+    bag = parse(line.strip())
+    for inner in bag.inner.keys():
+        outers[inner].add(bag.outer_color)
+
+frontier = set()
+valid = set()
+frontier = {'shiny gold'}
+
+while len(frontier) > 0:
+    color = frontier.pop()
+    new_valid = valid | outers[color]
+    frontier = frontier | (new_valid - valid)
+    valid = new_valid
+
+print(len(valid))
