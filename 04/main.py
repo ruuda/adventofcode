@@ -16,5 +16,12 @@ for line in open('input.txt', 'r', encoding='ascii'):
 
 passports.append(passport)
 
-for p in passports:
-    print(p)
+
+def is_valid(passport: Dict[str, str]) -> bool:
+    required_fields = [
+        'byr', 'iyr', 'eyr', 'hgt', 'hcl', 'ecl', 'pid',
+    ]
+    return all(field in passport for field in required_fields)
+
+
+print(sum(is_valid(p) for p in passports))
