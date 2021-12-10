@@ -1,8 +1,12 @@
 #!/usr/bin/awk -f
 
 BEGIN {
-  best_draws = 75;
-  best_score = 0;
+  first_score = 0;
+  first_bingo = 75;
+
+  last_score = 0;
+  last_bingo = 0;
+
   board_line = 0;
 }
 
@@ -32,7 +36,7 @@ function eval_board() {
       if (col_bingo) bingo = 1;
     }
 
-    if (bingo && i <= best_draws) {
+    if (bingo) {
       sum = 0;
       for (j = 0; j < 25; j++) {
         if (board[j] != "x") sum += board[j];
@@ -40,14 +44,24 @@ function eval_board() {
 
       score = sum * draws[i];
 
-      if (i < best_draws) {
-        best_score = score;
-        best_draws = i;
-      } else if (score > best_score) {
-        best_score = score;
+      if (i < first_bingo) {
+        first_score = score;
+        first_bingo = i;
+      }
+      if (i == first_bingo && score > first_score) {
+        first_score = score;
+      }
+
+      if (i > last_bingo) {
+        last_score = score;
+        last_bingo = i;
+      }
+      if (i == last_bingo && score < last_score) {
+        last_score = score;
       }
 
       print("Bingo at draw", i);
+      return;
     }
   }
 }
@@ -56,7 +70,7 @@ NR == 1 {
   # Line 0 contains the draws, delimited by comma.
   # Store them in the "draws" array.
   split($0, draws, ",");
-  best_draws = length(draws);
+  first_bingo = length(draws);
 }
 $0 == "" && NR > 2 {
   eval_board();
@@ -74,6 +88,6 @@ $0 != "" && NR > 2 {
 END {
   # We still need to evaluate the final board, as there is no blank line after it.
   eval_board();
-  print("Winning score:", best_score);
-  print("Won in", best_draws, "draws.");
+  print("First win: score", first_score, "at draw", first_bingo);
+  print("Last win:  score", last_score, "at draw", last_bingo);
 }
