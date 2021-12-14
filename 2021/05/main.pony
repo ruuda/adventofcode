@@ -13,12 +13,24 @@ class Line
     x1 = x1'
     y1 = y1'
 
+// An axis-aligned line. The axis is not specified out of band.
+class AaLine
+  let x: U32
+  let y: U32
+  let len: U32
+
+  new create(x': U32, y': U32, len': U32) =>
+    x = x'
+    y = y'
+    len = len'
+
 
 actor Main
   new create(env: Env) =>
     let caps = recover val FileCaps.>set(FileRead).>set(FileStat) end
     try
-      var lines: Array[Line] = []
+      var hlines: Array[AaLine] = []
+      var vlines: Array[AaLine] = []
 
       let base = env.root as AmbientAuth
       let path = FilePath(base, "test.txt", caps)?
@@ -34,13 +46,29 @@ actor Main
           coord1(0)?.u32()?,
           coord1(1)?.u32()?
         )
-        lines.push(line)
+
+        if line.x0 == line.x1 then
+          if line.y1 > line.y0 then line.y1
+            vlines.push(AaLine(line.x0, line.y0, line.y1 - line.y0))
+          else
+            vlines.push(AaLine(line.x0, line.y1, line.y0 - line.y1))
+          end
+        elseif line.y0 == line.y1 then
+          if line.x1 > line.x0 then
+            hlines.push(AaLine(line.x0, line.y0, line.x1 - line.x0))
+          else
+            hlines.push(AaLine(line.x1, line.y0, line.x0 - line.x1))
+          end
+        else
+          // For now (part 1), we ignore non-axis-aligned lines.
+          continue
+        end
+
       end
 
-      for z in lines.values() do
-        env.out.print(z.x0.string() + "," + z.y0.string() + " -> " + z.x1.string())
+      for z in hlines.values() do
+        env.out.print(z.x.string() + "," + z.y.string() + " -> " + z.len.string())
       end
-
 
     else
       env.out.print("Something went wrong")
