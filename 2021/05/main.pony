@@ -63,10 +63,11 @@ actor Main
           // For now (part 1), we ignore non-axis-aligned lines.
           continue
         end
-
       end
 
-      for z in hlines.values() do
+      // TODO: How do I sort the lines here?
+
+      for z in sorted_hlines.values() do
         env.out.print(z.x.string() + "," + z.y.string() + " -> " + z.len.string())
       end
 
