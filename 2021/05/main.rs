@@ -40,11 +40,28 @@ fn report_horizontal_intersections<X: Fn(AaLine) -> u32, Y: Fn(AaLine) -> u32>(
     out
 }
 
+/// Report intersections between horizontal and vertical lines.
+fn report_intersections(hlines: &[AaLine], vlines: &[AaLine], out: &mut HashSet<(u32, u32)>) {
+    for zh in hlines {
+        for zv in vlines {
+            // We could take advantage of the vlines being sorted to early out
+            // here, but for now quadratic complexity is acceptable.
+            if zh.y < zv.y || zh.y >= zv.y + zv.len {
+                continue
+            }
+            if zv.x < zh.x || zv.x >= zh.x + zh.len {
+                continue
+            }
+            out.insert((zv.x, zh.y));
+        }
+    }
+}
+
 fn main() -> io::Result<()> {
     let mut hlines = Vec::new();
     let mut vlines = Vec::new();
 
-    for file_line_io in BufReader::new(File::open("test.txt")?).lines() {
+    for file_line_io in BufReader::new(File::open("input.txt")?).lines() {
         let file_line = file_line_io?;
 
         let mut coords = file_line.split(" -> ");
@@ -95,12 +112,11 @@ fn main() -> io::Result<()> {
         isects.insert((x, y));
     }
 
-    for p in isects {
-        println!("{:?}", p);
-    }
-    for z in hlines.iter() {
-        println!("{:?}", z);
-    }
+    // Now aside from the intersections between lines of the same orientation,
+    // find intersections between different orientations.
+    report_intersections(&hlines[..], &vlines[..], &mut isects);
+
+    println!("{}", isects.len());
 
     Ok(())
 }
