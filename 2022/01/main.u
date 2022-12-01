@@ -1,0 +1,39 @@
+use List :+
+
+main : '{IO, Exception} ()
+main =
+  mostCaloriesElf (FilePath "input.txt")
+
+mostCaloriesElf : FilePath -> '{IO, Exception} ()
+mostCaloriesElf fname = do
+  use base.IO Handle
+  use base.IO.FilePath open
+  use base.IO.Handle close
+
+  read : Handle ->{IO, Exception} (List Nat)
+  read fileHandle =
+    go elves acc =
+      if isEOF fileHandle
+        then (elves :+ acc)
+        else match getLine fileHandle with
+          "" -> go (elves :+ acc) 0
+          caloriesText ->
+            n = Nat.fromTextOrFail caloriesText
+            go elves (acc + n)
+    go [] 0
+  
+  fileHandle : '{IO, Exception} Handle
+  fileHandle _ = open fname Read
+
+  _printCaloriesPerElf : List Nat ->{IO, Exception} Unit
+  _printCaloriesPerElf elves =
+    _ = List.map (calories -> printLine (Nat.toText calories)) elves
+    ()
+
+  printMaxCalories : List Nat ->{IO, Exception} Unit
+  printMaxCalories elves =
+    match maximum elves with
+      Some n -> printLine (Nat.toText n)
+      None -> printLine "There should be at least one elf."
+
+  bracket fileHandle close (file -> printMaxCalories (read file))
