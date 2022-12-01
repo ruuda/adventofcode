@@ -30,10 +30,20 @@ mostCaloriesElf fname = do
     _ = List.map (calories -> printLine (Nat.toText calories)) elves
     ()
 
-  printMaxCalories : List Nat ->{IO, Exception} Unit
-  printMaxCalories elves =
+  _printMaxCalories : List Nat ->{IO, Exception} Unit
+  _printMaxCalories elves =
     match maximum elves with
       Some n -> printLine (Nat.toText n)
       None -> printLine "There should be at least one elf."
 
-  bracket fileHandle close (file -> printMaxCalories (read file))
+  printTop3Calories : List Nat ->{IO, Exception} Unit
+  printTop3Calories elves =
+    elves
+      |> List.sortBy id
+      |> List.reverse
+      |> (List.take 3)
+      |> Nat.sum
+      |> Nat.toText
+      |> printLine
+
+  bracket fileHandle close (file -> printTop3Calories (read file))
