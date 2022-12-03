@@ -50,8 +50,34 @@ let
         else go (n + 1);
     in
       go 0;
+
+  # The individual priorities, sum to get the final answer.
+  solutionsA = builtins.map (x: priority (findDup (rucksack x))) lines;
+
+  # Break the lines into groups of three, with attrs a, b, c.
+  groups =
+    let
+      insert = groups: line:
+        let
+          head = builtins.head groups;
+          tail = builtins.tail groups;
+        in
+          if head ? c
+          then ([{ a = line; }] ++ groups)
+          else if head ? b
+          then ([({ c = line; } // head)] ++ tail)
+          else if head ? a
+          then ([({ b = line; } // head)] ++ tail)
+          else ([{ a = line; }] ++ tail);
+    in
+      builtins.foldl' insert [{}] lines;
+
+  badge = { a, b, c }:
+    let
+      pickBadge = q: z: if (contains q b) && (contains q c) then q else z;
+    in
+      foldlString pickBadge "" a;
+
+  solutionsB = builtins.map (group: priority (badge group)) groups;
 in
-  builtins.foldl'
-    builtins.add
-    0
-    (builtins.map (x: priority (findDup (rucksack x))) lines)
+  builtins.foldl' builtins.add 0 solutionsB
