@@ -14,7 +14,6 @@
           name = "aoc2022";
           nativeBuildInputs = [
             unison.packages.${system}.ucm
-            pkgs.dhall
           ];
         };
       };
