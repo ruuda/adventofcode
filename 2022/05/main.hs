@@ -68,10 +68,36 @@ executeOnce from to stacks =
   in
     pushAt to x stacks'
 
-execute :: Move -> [[Char]] -> [[Char]]
-execute move stacks = case move of
+executeCrateMover9000 :: Move -> [[Char]] -> [[Char]]
+executeCrateMover9000 move stacks = case move of
   Move 0 _ _ -> stacks
-  Move n from to -> execute (Move (n - 1) from to) (executeOnce from to stacks)
+  Move n from to -> executeCrateMover9000 (Move (n - 1) from to) (executeOnce from to stacks)
+
+popAtN :: Int -> Int -> [[Char]] -> ([[Char]], [Char])
+popAtN i n stacks =
+  let
+    stack = stacks !! i
+    (result, stack') = (take n stack, drop n stack)
+    before = take i stacks
+    after = drop (i + 1) stacks
+  in
+    (before ++ [stack'] ++ after, result)
+
+pushAtN :: Int -> [Char] -> [[Char]] -> [[Char]]
+pushAtN i x stacks =
+  let
+    stack = stacks !! i
+    before = take i stacks
+    after = drop (i + 1) stacks
+  in
+    before ++ [x ++ stack] ++ after
+
+executeCrateMover9001 :: Move -> [[Char]] -> [[Char]]
+executeCrateMover9001 (Move n from to) stacks =
+  let
+    (stacks', x) = popAtN from n stacks
+  in
+    pushAtN to x stacks'
 
 main :: IO ()
 main = do
@@ -79,6 +105,8 @@ main = do
   let
     (stacks, movesStrings) = parseStacks $ lines fileContents
     moves = fmap parseMove movesStrings
-    finalState = foldl' (flip execute) stacks moves
-  putStrLn $ fmap head finalState
+    finalState9000 = foldl' (flip executeCrateMover9000) stacks moves
+    finalState9001 = foldl' (flip executeCrateMover9001) stacks moves
+  putStrLn $ "CrateMover 9000 result: " <> fmap head finalState9000
+  putStrLn $ "CrateMover 9001 result: " <> fmap head finalState9001
    
