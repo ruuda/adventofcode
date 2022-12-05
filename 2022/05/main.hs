@@ -6,7 +6,7 @@ module Main where
 
 import Control.Monad (forM_)
 import Data.Char (isDigit)
-import Data.List (transpose)
+import Data.List (transpose, foldl')
 
 parseRow :: String -> [Char]
 parseRow input = case input of
@@ -37,14 +37,48 @@ data Move = Move
 
 parseMove :: String -> Move
 parseMove line = case words line of
-  ["move", count, "from", from, "to", to] -> Move (read count) (read from) (read to)
+  ["move", count, "from", from, "to", to] ->
+    -- We subtract one because we want 0-based indexing.
+    Move (read count) ((read from) - 1) ((read to) - 1)
   z -> error $ "invalid input: " ++ (unwords z)
+
+popAt :: Int -> [[Char]] -> ([[Char]], Char)
+popAt i stacks =
+  let
+    stack = stacks !! i
+    (result, stack') = (head stack, tail stack)
+    before = take i stacks
+    after = drop (i + 1) stacks
+  in
+    (before ++ [stack'] ++ after, result)
+
+pushAt :: Int -> Char -> [[Char]] -> [[Char]]
+pushAt i x stacks =
+  let
+    stack = stacks !! i
+    before = take i stacks
+    after = drop (i + 1) stacks
+  in
+    before ++ [x : stack] ++ after
+
+executeOnce :: Int -> Int -> [[Char]] -> [[Char]]
+executeOnce from to stacks =
+  let
+    (stacks', x) = popAt from stacks
+  in
+    pushAt to x stacks'
+
+execute :: Move -> [[Char]] -> [[Char]]
+execute move stacks = case move of
+  Move 0 _ _ -> stacks
+  Move n from to -> execute (Move (n - 1) from to) (executeOnce from to stacks)
 
 main :: IO ()
 main = do
-  fileContents <- readFile "example.txt"
+  fileContents <- readFile "input.txt"
   let
     (stacks, movesStrings) = parseStacks $ lines fileContents
     moves = fmap parseMove movesStrings
-  putStrLn $ show stacks
-  forM_ moves print
+    finalState = foldl' (flip execute) stacks moves
+  putStrLn $ fmap head finalState
+   
