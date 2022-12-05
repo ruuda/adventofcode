@@ -29,9 +29,22 @@ parseStacks = go []
           then (finalize stacks, tail more)
           else go (stacks ++ [row]) more
 
+data Move = Move
+  { mCount :: Int
+  , mFrom :: Int
+  , mTo :: Int
+  } deriving (Show)
+
+parseMove :: String -> Move
+parseMove line = case words line of
+  ["move", count, "from", from, "to", to] -> Move (read count) (read from) (read to)
+  z -> error $ "invalid input: " ++ (unwords z)
+
 main :: IO ()
 main = do
   fileContents <- readFile "example.txt"
-  let (stacks, instructions) = parseStacks $ lines fileContents
+  let
+    (stacks, movesStrings) = parseStacks $ lines fileContents
+    moves = fmap parseMove movesStrings
   putStrLn $ show stacks
-  forM_ instructions putStrLn
+  forM_ moves print
