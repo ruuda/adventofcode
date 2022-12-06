@@ -13,8 +13,9 @@
         devShells.${system}.default = pkgs.mkShell {
           name = "aoc2022";
           nativeBuildInputs = [
-            unison.packages.${system}.ucm
             pkgs.ghc
+            pkgs.python3
+            unison.packages.${system}.ucm
           ];
         };
       };
