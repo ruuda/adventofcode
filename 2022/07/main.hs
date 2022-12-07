@@ -1,12 +1,14 @@
 #!/usr/bin/env runhaskell
 
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NumericUnderscores #-}
 
 module Main where
 
 import Control.Monad (foldM)
 import Data.Map (Map)
 import Prelude hiding (appendFile)
+import Data.List (foldl')
 
 import qualified Data.Map as Map
 
@@ -67,18 +69,21 @@ execute cmd state = case words cmd of
   ["dir", dirname]  -> alterCurrent (appendDir dirname) state
   [size, fname]     -> alterCurrent (appendFile fname (read size)) state
 
+-- Traverse the tree and return all nodes, both internal and external.
+allDirs :: Dir -> [Dir]
+allDirs dir = dir : (concatMap allDirs $ Map.elems $ subdirs dir)
+
+totalSize :: Dir -> Int
+totalSize dir = sum
+  $  (fmap totalSize $ Map.elems $ subdirs dir)
+  <> (Map.elems $ files dir)
+
 main :: IO ()
 main = do
-  fileContents <- lines <$> readFile "example.txt"
-  finalState <- foldM
-    (\state line -> do
-      putStrLn $ "pre: " <> show state
-      putStrLn $ unlines $ showDir $ stateRoot state
-      putStrLn $ "cmd: " <> line
-      pure $ execute line state
-    )
-    emptyState
-    fileContents
+  fileContents <- lines <$> readFile "input.txt"
+  let
+    finalState = foldl' (\state line -> execute line state) emptyState fileContents
+    smallDirs = filter (\dir -> totalSize dir < 100_000) $ allDirs $ stateRoot finalState
 
-  putStrLn $ show finalState
   putStrLn $ unlines $ showDir $ stateRoot finalState
+  putStrLn $ show $ sum $ fmap totalSize smallDirs
