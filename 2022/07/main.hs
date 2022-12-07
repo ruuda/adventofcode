@@ -8,7 +8,7 @@ module Main where
 import Control.Monad (foldM)
 import Data.Map (Map)
 import Prelude hiding (appendFile)
-import Data.List (foldl')
+import Data.List (foldl', sortOn)
 
 import qualified Data.Map as Map
 
@@ -86,4 +86,18 @@ main = do
     smallDirs = filter (\dir -> totalSize dir < 100_000) $ allDirs $ stateRoot finalState
 
   putStrLn $ unlines $ showDir $ stateRoot finalState
-  putStrLn $ show $ sum $ fmap totalSize smallDirs
+  putStrLn $ "Part 1: " <> (show $ sum $ fmap totalSize smallDirs)
+
+  let
+    rootSize = totalSize $ stateRoot finalState
+    diskSize = 70_000_000
+    currentFree = diskSize - rootSize
+    requiredToFree = 30_000_000 - currentFree
+    candidates = id
+      $ sortOn (\dir -> totalSize dir)
+      $ filter (\dir -> totalSize dir >= requiredToFree)
+      $ allDirs
+      $ stateRoot finalState
+
+  putStrLn $ "Num bytes to free: " <> (show requiredToFree)
+  putStrLn $ "Part 2: " <> (show $ totalSize $ head candidates)
