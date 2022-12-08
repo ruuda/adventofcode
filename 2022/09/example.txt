@@ -1,0 +1,4 @@
+This is a fake input
+I want to try Go tomorrow
+So I can get started with the file reading stuff already
+Because surely that's going to be part of it

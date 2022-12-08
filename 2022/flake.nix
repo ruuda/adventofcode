@@ -14,6 +14,7 @@
           name = "aoc2022";
           nativeBuildInputs = [
             pkgs.ghc
+            pkgs.go
             pkgs.python3
             unison.packages.${system}.ucm
           ];
