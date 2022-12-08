@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"strings"
 )
 
 func check(e error) {
@@ -12,7 +13,10 @@ func check(e error) {
 }
 
 func main() {
-	dat, err := os.ReadFile("example.txt")
+	data, err := os.ReadFile("example.txt")
+	lines := strings.Split(string(data), "\n")
 	check(err)
-	fmt.Printf("%s\n", dat)
+	for _, line := range lines {
+		fmt.Printf("%s\n", line)
+	}
 }
