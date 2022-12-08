@@ -3,7 +3,7 @@
 from typing import List, Iterable, Tuple
 
 grid = [
-    [ord(x) - ord('0') for x in line.strip()]
+    [ord(x) - ord("0") for x in line.strip()]
     for line in open("input.txt", "r", encoding="utf-8")
 ]
 
@@ -22,6 +22,7 @@ def iter_visible(dy: int, dx: int, inits: List[Point]) -> Iterable[Point]:
                 yield y, x
             y += dy
             x += dx
+
 
 vis_x_pos = iter_visible(0, 1, [(y, 0) for y in range(h)])
 vis_x_neg = iter_visible(0, -1, [(y, w - 1) for y in range(h)])
