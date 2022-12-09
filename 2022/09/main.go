@@ -4,6 +4,7 @@ import (
 	"os"
 	"fmt"
 	"strings"
+  "strconv"
 )
 
 func check(e error) {
@@ -14,9 +15,15 @@ func check(e error) {
 
 func main() {
 	data, err := os.ReadFile("example.txt")
-	lines := strings.Split(string(data), "\n")
 	check(err)
+	lines := strings.Split(string(data), "\n")
 	for _, line := range lines {
-		fmt.Printf("%s\n", line)
+    if line == "" {
+      continue
+    }
+    direction := line[:1]
+    distance, err := strconv.Atoi(line[2:])
+    check(err)
+		fmt.Printf("%s %d\n", direction, distance)
 	}
 }
