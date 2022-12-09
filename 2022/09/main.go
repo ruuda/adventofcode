@@ -41,11 +41,14 @@ func main() {
 	check(err)
 	lines := strings.Split(string(data), "\n")
 
-  headPos := Point{0, 0}
-  tailPos := Point{0, 0}
-  
+  var currentPos [10]Point
   // Lol, no built-in set data structure.
-  tailPositions := map[Point]int{tailPos: 1}
+  var uniquePos [10]map[Point]int
+
+  for i := 0; i < 10; i++ {
+    currentPos[i] = Point{0, 0}
+    uniquePos[i] = map[Point]int{currentPos[i]: 1}
+  }
 
 	for _, line := range lines {
     if line == "" {
@@ -56,6 +59,8 @@ func main() {
     check(err)
 
     for i := 0; i < distance; i++ {
+      headPos := currentPos[0]
+
       // Move the head.
       switch direction {
       case "U":
@@ -68,33 +73,41 @@ func main() {
         headPos.x -= 1
       }
 
-      // The tail moves diagonally if it is not within distance 1 of the head.
-      dx := headPos.x - tailPos.x
-      dy := headPos.y - tailPos.y
+      currentPos[0] = headPos
 
-      if absInt(dx) <= 1 && absInt(dy) <= 1 {
-        // Don't move, the head and tail are already touching.
-      } else if absInt(dx) == 0 {
-        // Already in the same column, move only within the column.
-        tailPos.y += sgnInt(dy)
-      } else if absInt(dy) == 0 {
-        // ALready in the same row, move only within the row.
-        tailPos.x += sgnInt(dx)
-      } else {
-        // We need to do a diagonal move.
-        tailPos.x += sgnInt(dx)
-        tailPos.y += sgnInt(dy)
+      for j := 1; j < 10; j++ {
+        headPos := currentPos[j - 1]
+        tailPos := currentPos[j]
+
+        dx := headPos.x - tailPos.x
+        dy := headPos.y - tailPos.y
+
+        if absInt(dx) <= 1 && absInt(dy) <= 1 {
+          // Don't move, the head and tail are already touching.
+        } else if absInt(dx) == 0 {
+          // Already in the same column, move only within the column.
+          tailPos.y += sgnInt(dy)
+        } else if absInt(dy) == 0 {
+          // ALready in the same row, move only within the row.
+          tailPos.x += sgnInt(dx)
+        } else {
+          // We need to do a diagonal move.
+          tailPos.x += sgnInt(dx)
+          tailPos.y += sgnInt(dy)
+        }
+
+        currentPos[j] = tailPos
+        uniquePos[j][tailPos] = 1
       }
-
-      tailPositions[tailPos] = 1
+    }
 
 		fmt.Printf(
-      "%s %d/%d -> H(%d, %d) T(%d, %d), %d unique positions\n",
-      direction, i, distance,
-      headPos.x, headPos.y,
-      tailPos.x, tailPos.y,
-      len(tailPositions),
+      "%s %d -> H(%d, %d) T(%d, %d), %d unique positions #1, %d unique positions #9\n",
+      direction, distance,
+      currentPos[0].x, currentPos[0].y,
+      currentPos[1].x, currentPos[1].y,
+      len(uniquePos[1]),
+      len(uniquePos[9]),
     )
-    }
 	}
 }
