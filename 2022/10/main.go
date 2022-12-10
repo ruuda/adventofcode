@@ -55,12 +55,29 @@ func main() {
 	var nextSamplePc = 20
 	var totalSignalStrength = 0
 
+	var crtX = 0
+	fmt.Printf("Part 2, display output:\n\n")
+
 	for _, instr := range instructions {
 		pc += instr.latency
 
+		// For part 2, we need to figure out whether the CRT beam hit the pixel.
+		for i := 0; i < instr.latency; i++ {
+			if crtX >= x-1 && crtX <= x+1 {
+				fmt.Printf("#")
+			} else {
+				fmt.Printf(" ")
+			}
+			crtX++
+			if crtX >= 40 {
+				fmt.Printf("\n")
+				crtX -= 40
+			}
+		}
+
+		// For part 1, we need to count the total "signal strength"
 		if pc >= nextSamplePc {
 			signalStrength := x * nextSamplePc
-			fmt.Printf("pc=%d\tx=%d\tss=%d\n", nextSamplePc, x, signalStrength)
 			// Instructions say to find the signal strength up to the 220th cycle.
 			if nextSamplePc <= 220 {
 				totalSignalStrength += signalStrength
@@ -71,5 +88,5 @@ func main() {
 		x += instr.deltaX
 	}
 
-	fmt.Printf("Part 1, total signal strength: %d\n", totalSignalStrength)
+	fmt.Printf("\nPart 1, total signal strength: %d\n", totalSignalStrength)
 }
