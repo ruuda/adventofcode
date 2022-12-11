@@ -18,7 +18,7 @@ typedef struct {
 } monkey_t;
 
 monkey_t monkeys[MAX_MONKEYS];
-int n_inspects[MAX_MONKEYS];
+long int n_inspects[MAX_MONKEYS];
 
 // Parse a comma-delimited list of integers into the monkey.
 int parse_items(monkey_t* monkey, const char* line) {
@@ -69,36 +69,41 @@ int pop_item(monkey_t* monkey) {
   return result;
 }
 
-int process_monkey(int index) {
+int process_monkey(int index, int modulus) {
   monkey_t* monkey = monkeys + index;
 
   while (monkey->n_items > 0) {
-    int worry = pop_item(monkey);
+    long int worry = pop_item(monkey);
     n_inspects[index]++;
+    assert(worry >= 0);
 
-    printf("  Monkey inspects item with a worry level of %d.\n", worry);
+    printf("  Monkey inspects item with a worry level of %ld.\n", worry);
 
-    int rhs;
+    long int rhs;
     switch (monkey->operation) {
       case '+':
         // We abuse the fact that the text 'old' parses as the number 0 here;
         // in some inputs the formula is 'old * old', not a number on the
         // right-hand side.
         rhs = monkey->rhs > 0 ? monkey->rhs : worry;
-        printf("    Worry gets increased by %d.\n", rhs);
+        printf("    Worry gets increased by %ld.\n", rhs);
         worry = worry + rhs;
         break;
       case '*':
         rhs = monkey->rhs > 0 ? monkey->rhs : worry;
-        printf("    Worry gets multiplied by %d.\n", rhs);
+        printf("    Worry gets multiplied by %ld.\n", rhs);
         worry = worry * rhs;
         break;
       default:
         printf("Invalid operation: %c\n", monkey->operation);
     }
 
-    worry = worry / 3;
-    printf("    After inspection, worry level is %d.\n", worry);
+    // For part 1, this division should be enabled.
+    // worry = worry / 3;
+    // For part 2, we have the modulus instead.
+    worry = worry % modulus;
+
+    printf("    After inspection, worry level is %ld.\n", worry);
 
     if (worry % monkey->divisor == 0) {
       int result = push_item(monkeys + monkey->to_if_divides, worry);
@@ -188,20 +193,34 @@ int main(int argc, const char** argv) {
     }
   }
 
-  for (int round = 0; round < 20; round++) {
+  // For part 1, this should be 20, not 10000.
+  size_t n_rounds = 10000;
+
+  // For part 2, the worry level keeps on growing, it overflows int. But note
+  // that the monkeys only care about the worry level *modulo* their own
+  // divisor. So we can work modulo the product of all their divisors, that way
+  // they are still guaranteed to find the same result of the modulo operation.
+  // And the product of a few monkey's divisors should fit just fine.
+  int modulus = 1;
+  for (int i = 0; i < n_monkeys; i++) {
+    modulus *= monkeys[i].divisor;
+  }
+  printf("Modulus: %d, %d\n", modulus, modulus * modulus);
+
+  for (int round = 0; round < n_rounds; round++) {
     for (int i = 0; i < n_monkeys; i++) {
       printf("Round %d, processing monkey %d:\n", round, i);
-      int result = process_monkey(i);
+      int result = process_monkey(i, modulus);
       if (result != 0) return 1;
     }
   }
 
   // Find the two most active monkeys.
-  qsort(n_inspects, n_monkeys, sizeof(int), compare_int_desc);
+  qsort(n_inspects, n_monkeys, sizeof(long int), compare_int_desc);
   for (int i = 0; i < n_monkeys; i++) {
-    printf("Activity %d: %d\n", i, n_inspects[i]);
+    printf("Activity %d: %ld\n", i, n_inspects[i]);
   }
-  printf("Answer part 1: %d\n", n_inspects[0] * n_inspects[1]);
+  printf("Answer part 1: %ld\n", n_inspects[0] * n_inspects[1]);
 
   return 0;
 }
