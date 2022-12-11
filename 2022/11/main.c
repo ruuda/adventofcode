@@ -18,6 +18,7 @@ typedef struct {
 } monkey_t;
 
 monkey_t monkeys[MAX_MONKEYS];
+int n_inspects[MAX_MONKEYS];
 
 // Parse a comma-delimited list of integers into the monkey.
 int parse_items(monkey_t* monkey, const char* line) {
@@ -68,12 +69,16 @@ int pop_item(monkey_t* monkey) {
   return result;
 }
 
-int process_monkey(monkey_t* monkey) {
+int process_monkey(int index) {
+  monkey_t* monkey = monkeys + index;
+
   while (monkey->n_items > 0) {
     int worry = pop_item(monkey);
-    int rhs;
+    n_inspects[index]++;
+
     printf("  Monkey inspects item with a worry level of %d.\n", worry);
 
+    int rhs;
     switch (monkey->operation) {
       case '+':
         // We abuse the fact that the text 'old' parses as the number 0 here;
@@ -107,6 +112,12 @@ int process_monkey(monkey_t* monkey) {
   }
 
   return 0;
+}
+
+int compare_int_desc(const void* pa, const void* pb) {
+  int a = *((int*)pa);
+  int b = *((int*)pb);
+  return (a < b) - (a > b);
 }
 
 int main(int argc, const char** argv) {
@@ -180,10 +191,17 @@ int main(int argc, const char** argv) {
   for (int round = 0; round < 20; round++) {
     for (int i = 0; i < n_monkeys; i++) {
       printf("Round %d, processing monkey %d:\n", round, i);
-      int result = process_monkey(monkeys + i);
+      int result = process_monkey(i);
       if (result != 0) return 1;
     }
   }
+
+  // Find the two most active monkeys.
+  qsort(n_inspects, n_monkeys, sizeof(int), compare_int_desc);
+  for (int i = 0; i < n_monkeys; i++) {
+    printf("Activity %d: %d\n", i, n_inspects[i]);
+  }
+  printf("Answer part 1: %d\n", n_inspects[0] * n_inspects[1]);
 
   return 0;
 }
