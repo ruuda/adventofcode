@@ -27,7 +27,7 @@ int parse_items(monkey_t* monkey, const char* line) {
     *item = atoi(line);
     monkey->n_items++;
 
-    if (monkey->n_items > MAX_ITEMS) {
+    if (monkey->n_items >= MAX_ITEMS) {
       printf("Too many items.\n");
       return 1;
     }
@@ -38,6 +38,75 @@ int parse_items(monkey_t* monkey, const char* line) {
     // so we don't need to skip it here.
     line = result + 1;
   }
+}
+
+// Add an item at the back of the monkeys queue.
+int push_item(monkey_t* monkey, int item) {
+  monkey->items[monkey->n_items] = item;
+  monkey->n_items++;
+  if (monkey->n_items > MAX_ITEMS) {
+    printf("Too many items.\n");
+    return 1;
+  }
+  return 0;
+}
+
+// Pop an item from the front of the monkeys queue.
+int pop_item(monkey_t* monkey) {
+  if (monkey->n_items == 0) {
+    printf("Error: underflow when popping monkey.\n");
+    return 0;
+  }
+
+  int result = monkey->items[0];
+  monkey->n_items--;
+
+  for (int i = 0; i < monkey->n_items; i++) {
+    monkey->items[i] = monkey->items[i + 1];
+  }
+
+  return result;
+}
+
+int process_monkey(monkey_t* monkey) {
+  while (monkey->n_items > 0) {
+    int worry = pop_item(monkey);
+    int rhs;
+    printf("  Monkey inspects item with a worry level of %d.\n", worry);
+
+    switch (monkey->operation) {
+      case '+':
+        // We abuse the fact that the text 'old' parses as the number 0 here;
+        // in some inputs the formula is 'old * old', not a number on the
+        // right-hand side.
+        rhs = monkey->rhs > 0 ? monkey->rhs : worry;
+        printf("    Worry gets increased by %d.\n", rhs);
+        worry = worry + rhs;
+        break;
+      case '*':
+        rhs = monkey->rhs > 0 ? monkey->rhs : worry;
+        printf("    Worry gets multiplied by %d.\n", rhs);
+        worry = worry * rhs;
+        break;
+      default:
+        printf("Invalid operation: %c\n", monkey->operation);
+    }
+
+    worry = worry / 3;
+    printf("    After inspection, worry level is %d.\n", worry);
+
+    if (worry % monkey->divisor == 0) {
+      int result = push_item(monkeys + monkey->to_if_divides, worry);
+      if (result != 0) return 1;
+      printf("    Item thrown to monkey %d.\n", monkey->to_if_divides);
+    } else {
+      int result = push_item(monkeys + monkey->to_if_not_divides, worry);
+      if (result != 0) return 1;
+      printf("    Item thrown to monkey %d.\n", monkey->to_if_not_divides);
+    }
+  }
+
+  return 0;
 }
 
 int main(int argc, const char** argv) {
@@ -62,7 +131,7 @@ int main(int argc, const char** argv) {
       // We don't check the monkey number, we assume it's ordered.
       monkey = &monkeys[n_monkeys];
       n_monkeys++;
-      if (n_monkeys > MAX_MONKEYS) {
+      if (n_monkeys >= MAX_MONKEYS) {
         printf("Too many monkeys.\n");
         return 1;
       }
@@ -93,6 +162,8 @@ int main(int argc, const char** argv) {
     }
   }
 
+  free(line);
+
   for (int i = 0; i < n_monkeys; i++) {
     monkey_t* monkey = monkeys + i;
 
@@ -106,7 +177,13 @@ int main(int argc, const char** argv) {
     }
   }
 
-  free(line);
+  for (int round = 0; round < 20; round++) {
+    for (int i = 0; i < n_monkeys; i++) {
+      printf("Round %d, processing monkey %d:\n", round, i);
+      int result = process_monkey(monkeys + i);
+      if (result != 0) return 1;
+    }
+  }
 
   return 0;
 }
