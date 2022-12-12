@@ -3,7 +3,7 @@ use std::fs;
 use std::io;
 
 /// Return the length of the shortest path from a cell that satisfies the
-/// condition, to `end`.
+/// `is_start` condition, to `end`.
 pub fn dijkstra_until<F: Fn(u8) -> bool>(field: &[&[u8]], end: (i32, i32), is_start: F) -> i32 {
     let height = field.len();
     let width = field[0].len();
@@ -49,11 +49,6 @@ pub fn dijkstra_until<F: Fn(u8) -> bool>(field: &[&[u8]], end: (i32, i32), is_st
             let c = (cx, cy);
             let zc = get_z(c);
 
-            if closed.contains(&c) {
-                // We already have a shorter route to this cell.
-                continue;
-            }
-
             if zp > zc + 1 {
                 // We cannot step from this cell, we are too high.
                 continue;
@@ -67,7 +62,7 @@ pub fn dijkstra_until<F: Fn(u8) -> bool>(field: &[&[u8]], end: (i32, i32), is_st
 fn main() -> io::Result<()> {
     // Parse the field input into a 2d grid. Conveniently the input is ascii,
     // so we can just treat the letters as 8-bit height values.
-    let raw_field = fs::read_to_string("example.txt")?;
+    let raw_field = fs::read_to_string("input.txt")?;
     let width = raw_field.find('\n').expect("Input must contain newline.");
     let field: Vec<&[u8]> = raw_field
         .as_bytes()
@@ -78,10 +73,9 @@ fn main() -> io::Result<()> {
     // Locate the end position in the grid.
     let mut end = (0, 0);
     for (y, line) in field.iter().enumerate() {
-        for (x, ch) in line.iter().enumerate() {
-            match ch {
-                b'E' => end = (x as i32, y as i32),
-                _ => continue,
+        for (x, &ch) in line.iter().enumerate() {
+            if ch == b'E' {
+                end = (x as i32, y as i32);
             }
         }
     }
