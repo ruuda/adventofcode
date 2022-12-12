@@ -1,14 +1,10 @@
+use std::collections::{BinaryHeap, HashSet};
 use std::fs;
 use std::io;
-use std::collections::{HashSet, BinaryHeap};
 
 /// Return the length of the shortest path from a cell that satisfies the
 /// condition, to `end`.
-pub fn dijkstra_until<F: Fn(u8) -> bool>(
-    field: &[&[u8]],
-    end: (i32, i32),
-    is_start: F,
-) -> i32 {
+pub fn dijkstra_until<F: Fn(u8) -> bool>(field: &[&[u8]], end: (i32, i32), is_start: F) -> i32 {
     let height = field.len();
     let width = field[0].len();
 
@@ -66,7 +62,6 @@ pub fn dijkstra_until<F: Fn(u8) -> bool>(
             open.push((neg_dist - 1, c));
         }
     }
-
 }
 
 fn main() -> io::Result<()> {
