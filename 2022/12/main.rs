@@ -1,11 +1,11 @@
 use std::fs;
 use std::io;
-use std::collections::{HashMap, BinaryHeap};
+use std::collections::{HashSet, BinaryHeap};
 
 fn main() -> io::Result<()> {
     // Parse the field input into a 2d grid. Conveniently the input is ascii,
     // so we can just treat the letters as 8-bit height values.
-    let raw_field = fs::read_to_string("example.txt")?;
+    let raw_field = fs::read_to_string("input.txt")?;
     let width = raw_field.find('\n').expect("Input must contain newline.");
     let field: Vec<&[u8]> = raw_field
         .as_bytes()
@@ -38,19 +38,26 @@ fn main() -> io::Result<()> {
     // start, and a set of closed nodes, with the minimum distance to reach
     // them.
     let mut open = BinaryHeap::new();
-    let mut closed: HashMap<(i32, i32), u32> = HashMap::new();
+    let mut closed: HashSet<(i32, i32)> = HashSet::new();
     open.push((0, start));
 
     loop {
-        let (dist, p) = open.pop().expect("We should have found the exit.");
+        // We store the negative distance, because Rust's BinaryHeap is a
+        // max-heap, not a min-heap.
+        let (neg_dist, p) = open.pop().expect("We should have found the exit.");
         let (x, y) = p;
         let zp = get_z(p);
 
         if p == end {
-            println!("Shortest route to exit: {} steps", dist);
+            println!("Shortest route to exit: {} steps", -neg_dist);
             break;
         }
-        closed.insert(p, dist);
+
+        if closed.contains(&p) {
+            continue;
+        }
+
+        closed.insert(p);
 
         for (dx, dy) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
             let (cx, cy) = (x + dx, y + dy);
@@ -62,7 +69,7 @@ fn main() -> io::Result<()> {
             let c = (cx, cy);
             let zc = get_z(c);
 
-            if closed.contains_key(&c) {
+            if closed.contains(&c) {
                 // We already have a shorter route to this cell.
                 continue;
             }
@@ -72,7 +79,7 @@ fn main() -> io::Result<()> {
                 continue;
             }
 
-            open.push((dist + 1, c));
+            open.push((neg_dist - 1, c));
         }
     }
 
