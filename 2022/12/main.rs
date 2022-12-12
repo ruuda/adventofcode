@@ -27,7 +27,6 @@ pub fn dijkstra_until<F: Fn(u8) -> bool>(field: &[&[u8]], end: (i32, i32), is_st
         // max-heap, not a min-heap.
         let (neg_dist, p) = open.pop().expect("We should have found the exit.");
         let (x, y) = p;
-        let zp = get_z(p);
 
         if is_start(field[y as usize][x as usize]) {
             return -neg_dist;
@@ -47,9 +46,8 @@ pub fn dijkstra_until<F: Fn(u8) -> bool>(field: &[&[u8]], end: (i32, i32), is_st
             }
 
             let c = (cx, cy);
-            let zc = get_z(c);
 
-            if zp > zc + 1 {
+            if get_z(p) > get_z(c) + 1 {
                 // We cannot step from this cell, we are too high.
                 continue;
             }
