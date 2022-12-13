@@ -21,7 +21,9 @@ let
     else cont;
 
   compareList = lhs: rhs: cont:
-    if lhs == []
+    if lhs == [] && rhs == []
+    then cont
+    else if lhs == []
     then true
     else if rhs == []
     then false
