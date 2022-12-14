@@ -13,6 +13,13 @@ let
 
   parsePair = pair: builtins.map builtins.fromJSON (split "\n" pair);
 
+  unwrap = out: xs:
+    if xs == []
+    then out
+    else unwrap (out ++ (builtins.head xs)) (builtins.tail xs);
+
+  allElems = unwrap [] (builtins.map parsePair rawPairs);
+
   compareInt = lhs: rhs: cont:
     if lhs < rhs
     then true
@@ -58,5 +65,18 @@ let
     then n
     else sumTrueIndices (i + 1) (if builtins.head xs then n + i else n) (builtins.tail xs);
 
+  part1Answer = sumTrueIndices 1 0 wellOrderedPairs;
+
+  sortedPackets = builtins.sort (x: y: compare x y false) ([[[2]] [[6]]] ++ allElems);
+
+  dividerIndicesProduct = prod: i: xs:
+    if xs == []
+    then prod
+    else dividerIndicesProduct
+      (if builtins.head xs == [[2]] || builtins.head xs == [[6]] then i * prod else prod)
+      (i + 1)
+      (builtins.tail xs);
+
+  part2Answer = dividerIndicesProduct 1 1 sortedPackets;
 in
-  sumTrueIndices 1 0 wellOrderedPairs
+  part2Answer #sumTrueIndices 1 0 wellOrderedPairs
