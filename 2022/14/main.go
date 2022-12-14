@@ -54,7 +54,7 @@ func signum(x int) int {
 }
 
 // Return the cave (a cell is 0 for air, 1 for rock) and the x-offset.
-func drawCave() ([][]int, int) {
+func drawCave(phase string) ([][]int, int) {
 	caveVertices := loadCave()
 	var minX = caveVertices[0][0].x
 	var maxX = caveVertices[0][0].x
@@ -72,8 +72,25 @@ func drawCave() ([][]int, int) {
 			}
 		}
 	}
-	w := 1 + maxX - minX
-	h := 1 + maxY
+
+	var w, h int
+
+	if phase == "part1" {
+		w = 1 + maxX - minX
+		h = 1 + maxY
+	} else if phase == "part2" {
+		h = 3 + maxY
+		if 500-h < minX {
+			minX = 500 - h
+		}
+		if 500+h > maxX {
+			maxX = 500 + h
+		}
+		w = 1 + maxX - minX
+	} else {
+		panic("phase must be 'part1' or 'part2'")
+	}
+
 	cave := make([][]int, h)
 	for y := 0; y < h; y++ {
 		cave[y] = make([]int, w)
@@ -96,6 +113,13 @@ func drawCave() ([][]int, int) {
 				cave[y][x-minX] = 1
 			}
 			p = q
+		}
+	}
+
+	if phase == "part2" {
+		// Draw the floor too.
+		for x := 0; x < w; x++ {
+			cave[h-1][x] = 1
 		}
 	}
 
@@ -162,18 +186,25 @@ func dropSand(cave [][]int, x0 int) bool {
 	}
 }
 
-func main() {
-	cave, xoff := drawCave()
+func countSand(cave [][]int, xoff int) int {
 	var nSand = 0
 	for i := 1; ; i++ {
 		fmt.Printf("\nIteration %d:\n", i)
-		printCave(cave)
 		if dropSand(cave, 500-xoff) {
 			nSand++
 		} else {
-			break
+			printCave(cave)
+			return nSand
 		}
 	}
+}
 
-	fmt.Printf("Part 1, amount of sand: %d\n", nSand)
+func main() {
+	cave, xoff := drawCave("part1")
+	n := countSand(cave, xoff)
+	fmt.Printf("Part 1, amount of sand: %d\n", n)
+
+	cave, xoff = drawCave("part2")
+	n = countSand(cave, xoff)
+	fmt.Printf("Part 2, amount of sand: %d\n", n)
 }
