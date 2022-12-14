@@ -21,7 +21,7 @@ type Coord struct {
 func loadCave() [][]Coord {
 	var cave = make([][]Coord, 0)
 
-	data, err := os.ReadFile("example.txt")
+	data, err := os.ReadFile("input.txt")
 	check(err)
 	lines := strings.Split(string(data), "\n")
 
@@ -83,10 +83,11 @@ func drawCave() ([][]int, int) {
         fmt.Printf("%d,%d -> %d,%d\n", p.x, p.y, q.x, q.y);
         panic("Did not expect diagonal line.");
       }
+      cave[p.y][p.x - minX] = 1;
       for x, y = p.x, p.y; x != q.x || y != q.y; {
-        cave[y][x - minX] = 1;
         x += dx;
         y += dy;
+        cave[y][x - minX] = 1;
       }
       p = q;
     }
@@ -95,8 +96,7 @@ func drawCave() ([][]int, int) {
   return cave, minX;
 }
 
-func main() {
-  cave, _ := drawCave();
+func printCave(cave [][]int) {
   for _, line := range cave {
     for _, char := range line {
       switch char {
@@ -105,9 +105,69 @@ func main() {
       case 1:
         fmt.Printf("#");
       case 2:
-        fmt.Printf("o");
+        fmt.Printf(".");
       }
     }
     fmt.Printf("\n");
   }
+}
+
+func dropSand(cave [][]int, x0 int) bool {
+  w, h := len(cave[0]), len(cave);
+  var x = x0;
+  var y = 0;
+
+  if cave[y][x] != 0 {
+    // The starting position contains sand, we can drop no more sand.
+    return false;
+  }
+
+  for {
+    if y + 1 == h {
+      // Would fall off the world at the bottom.
+      return false;
+    }
+    if cave[y + 1][x] == 0 {
+      y += 1;
+      continue;
+    }
+    if x == 0 {
+      // Would fall off the world at the left.
+      return false;
+    }
+    if cave[y + 1][x - 1] == 0 {
+      y += 1;
+      x -= 1;
+      continue;
+    }
+    if x + 1 == w {
+      // Would fall off the world at the right.
+      return false;
+    }
+    if cave[y + 1][x + 1] == 0 {
+      y += 1;
+      x += 1;
+      continue;
+    }
+    // The sand can't move anywhere else, it comes to rest here.
+    // We mark sand with 2 (1 is rock, 0 is air).
+    cave[y][x] = 2;
+    return true;
+  }
+}
+
+func main() {
+  cave, xoff := drawCave();
+  var nSand = 0;
+  for i := 1;; i++ {
+    fmt.Printf("\nIteration %d:\n", i);
+    printCave(cave)
+    if dropSand(cave, 500 - xoff) {
+      nSand++;
+    } else {
+      break
+    }
+  }
+
+  fmt.Printf("Part 1, amount of sand: %d\n", nSand);
 }
