@@ -4,8 +4,8 @@
 BEGIN {
   FS = " "
   # Target row to investigate.
-  #ty = 10
-  ty = 15
+  ty = 10 # For the example.
+  ty = 2000000
 }
 
 function abs(x) {
@@ -16,10 +16,13 @@ function abs(x) {
 {
   # We want to split on all of these.
   gsub(/[=,:]/, " ", $0)
+  # Sensor posision
   sx = $4
   sy = $6
+  # Beacon position
   bx = $12
   by = $14
+  # "Radius" of the "circle"
   r = abs(sx - bx) + abs(sy - by)
 
   # Compute the distance to the line at y=ty.
@@ -34,8 +37,14 @@ function abs(x) {
       marks[i] = 1
     }
   }
+
+  # We also need to count if there are any beacons already on the line -- these
+  # don't count as no-beacon positions.
+  if (by == ty) {
+    beacons[bx] = 1
+  }
 }
 
 END {
-  print("Number of no-beacon positions:", length(marks))
+  print("Number of no-beacon positions:", length(marks) - length(beacons))
 }
