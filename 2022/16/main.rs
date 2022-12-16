@@ -1,4 +1,4 @@
-use std::collections::{HashSet, HashMap, BTreeMap};
+use std::collections::{HashMap, BTreeMap};
 use std::env;
 use std::fmt;
 use std::fs;
@@ -76,7 +76,6 @@ fn load_input() -> HashMap<ValveId, Valve> {
 struct State {
     location: ValveId,
     open_valves: BTreeMap<ValveId, u32>,
-    pressure_released: u32,
 }
 
 impl State {
@@ -84,45 +83,53 @@ impl State {
         State {
             location: ValveId::from_str("AA"),
             open_valves: BTreeMap::new(),
-            pressure_released: 0,
         }
     }
 
-    pub fn tick_minute(&self) -> State {
-        let mut state = self.clone();
-        state.pressure_released += self.open_valves.values().sum::<u32>();
-        state
+    pub fn release_pressure(&self) -> u32 {
+        self.open_valves.values().sum()
     }
 }
 
 fn main() {
     let valves = load_input();
 
-    let mut states = HashSet::new();
-    states.insert(State::new());
+    // The states contain the state of the world as the key, and the amount of
+    // pressure released so far as value.
+    let mut states = HashMap::new();
+    states.insert(State::new(), 0);
 
     for minute in 0..30 {
-        let mut new_states = HashSet::with_capacity(states.len());
+        let mut new_states = HashMap::with_capacity(states.len());
 
         // We take all of the states to the next minute, apply the flow of that.
-        for state in states.iter() {
-            new_states.insert(state.tick_minute());
+        for (state, pressure_released) in states.iter() {
+            new_states.insert(state.clone(), pressure_released + state.release_pressure());
         }
 
-        // Then for those states, we can also either move, or open a valve.
-        for state in states.iter() {
+        let mut insert_candidate = |state, new_pressure| {
+            let pressure = new_states
+                .entry(state)
+                .or_insert(new_pressure);
+            *pressure = new_pressure.max(*pressure);
+        };
+
+        // We can also either move, or open a valve.
+        for (state, pressure_released) in states.iter() {
             // If the valve is not open yet, we can open it.
             if !state.open_valves.contains_key(&state.location) {
-                let mut new_state = state.tick_minute();
+                let mut new_state = state.clone();
                 new_state.open_valves.insert(state.location, valves[&state.location].flow_rate);
-                new_states.insert(new_state);
+                let new_pressure = pressure_released + state.release_pressure();
+                insert_candidate(new_state, new_pressure);
             }
 
             // Alternatively, we can move to a different tunnel.
             for id in &valves[&state.location].tunnels_to {
-                let mut new_state = state.tick_minute();
+                let mut new_state = state.clone();
                 new_state.location = *id;
-                new_states.insert(new_state);
+                let new_pressure = pressure_released + state.release_pressure();
+                insert_candidate(new_state, new_pressure);
             }
         }
         println!("minute={} states={} new_states={}", minute, states.len(), new_states.len());
@@ -130,6 +137,6 @@ fn main() {
         states.extend(new_states.into_iter());
     }
 
-    let max_flow = states.iter().max_by_key(|s| s.pressure_released).unwrap();
-    println!("Pressure released: {}", max_flow.pressure_released);
+    let max_flow = states.iter().max_by_key(|kv| kv.1).unwrap();
+    println!("Pressure released: {}", max_flow.1);
 }
