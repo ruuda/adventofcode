@@ -21,7 +21,7 @@ function abs(x) {
 {
   # We want to split on all of these.
   gsub(/[=,:]/, " ", $0)
-  # Sensor posision
+  # Sensor position
   sx = $4
   sy = $6
   # Beacon position
