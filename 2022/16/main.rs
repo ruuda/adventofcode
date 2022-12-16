@@ -1,4 +1,4 @@
-use std::collections::{HashMap, BTreeMap};
+use std::collections::HashMap;
 use std::env;
 use std::fmt;
 use std::fs;
@@ -37,6 +37,7 @@ impl fmt::Display for ValveId {
 struct Valve {
     flow_rate: u32,
     tunnels_to: Vec<ValveId>,
+    mask: u64,
 }
 
 fn load_input() -> HashMap<ValveId, Valve> {
@@ -48,7 +49,9 @@ fn load_input() -> HashMap<ValveId, Valve> {
             .expect("Expected input fname as argument."),
     )
     .expect("Failed to read input.");
-    for line in input.lines() {
+
+    for (i, line) in input.lines().enumerate() {
+        let mask = 1_u64 << i;
         let parts = line.split(&[' ', '=', ';', ',']).filter(|s| !s.is_empty());
         // Example line:
         // Valve BB has flow rate=13; tunnels lead to valves CC, AA
@@ -65,6 +68,7 @@ fn load_input() -> HashMap<ValveId, Valve> {
         let valve = Valve {
             flow_rate,
             tunnels_to,
+            mask,
         };
         output.insert(id, valve);
     }
@@ -75,19 +79,26 @@ fn load_input() -> HashMap<ValveId, Valve> {
 #[derive(Clone, Hash, Eq, PartialEq)]
 struct State {
     location: ValveId,
-    open_valves: BTreeMap<ValveId, u32>,
+    open_valves: u64,
+    flow_rate: u32,
 }
 
 impl State {
     pub fn new() -> State {
         State {
             location: ValveId::from_str("AA"),
-            open_valves: BTreeMap::new(),
+            open_valves: 0,
+            flow_rate: 0,
         }
     }
 
-    pub fn release_pressure(&self) -> u32 {
-        self.open_valves.values().sum()
+    pub fn is_open(&self, valve: &Valve) -> bool {
+        self.open_valves & valve.mask > 0
+    }
+
+    pub fn open_valve(&mut self, valve: &Valve) {
+        self.open_valves |= valve.mask;
+        self.flow_rate += valve.flow_rate;
     }
 }
 
@@ -104,23 +115,22 @@ fn main() {
 
         // We take all of the states to the next minute, apply the flow of that.
         for (state, pressure_released) in states.iter() {
-            new_states.insert(state.clone(), pressure_released + state.release_pressure());
+            new_states.insert(state.clone(), pressure_released + state.flow_rate);
         }
 
         let mut insert_candidate = |state, new_pressure| {
-            let pressure = new_states
-                .entry(state)
-                .or_insert(new_pressure);
+            let pressure = new_states.entry(state).or_insert(new_pressure);
             *pressure = new_pressure.max(*pressure);
         };
 
         // We can also either move, or open a valve.
         for (state, pressure_released) in states.iter() {
             // If the valve is not open yet, we can open it.
-            if !state.open_valves.contains_key(&state.location) {
+            let valve = &valves[&state.location];
+            if !state.is_open(valve) {
                 let mut new_state = state.clone();
-                new_state.open_valves.insert(state.location, valves[&state.location].flow_rate);
-                let new_pressure = pressure_released + state.release_pressure();
+                new_state.open_valve(valve);
+                let new_pressure = pressure_released + state.flow_rate;
                 insert_candidate(new_state, new_pressure);
             }
 
@@ -128,13 +138,17 @@ fn main() {
             for id in &valves[&state.location].tunnels_to {
                 let mut new_state = state.clone();
                 new_state.location = *id;
-                let new_pressure = pressure_released + state.release_pressure();
+                let new_pressure = pressure_released + state.flow_rate;
                 insert_candidate(new_state, new_pressure);
             }
         }
-        println!("minute={} states={} new_states={}", minute, states.len(), new_states.len());
-
-        states.extend(new_states.into_iter());
+        println!(
+            "minute={} states={} new_states={}",
+            minute,
+            states.len(),
+            new_states.len()
+        );
+        states = new_states;
     }
 
     let max_flow = states.iter().max_by_key(|kv| kv.1).unwrap();
