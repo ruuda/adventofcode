@@ -50,7 +50,6 @@ END {
           # advance x, we don't need to continue to scan pointlessly.
           tdist = abs(sy - y)
           rt = r - tdist
-          # Subtract one, because the x++ will still execute.
           if (sx + rt > x) {
             x = sx + rt
           }
