@@ -56,7 +56,6 @@ fn load_input() -> HashMap<ValveId, Valve> {
         // Example line:
         // Valve BB has flow rate=13; tunnels lead to valves CC, AA
         let mut parts = parts.skip(1);
-        //parts.next().expect("syntax error");
         let id_str = parts.next().expect("syntax error");
         let mut parts = parts.skip(3);
         let flow_rate_str = parts.next().expect("syntax error");
@@ -78,7 +77,8 @@ fn load_input() -> HashMap<ValveId, Valve> {
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 struct State {
-    location: ValveId,
+    location_self: ValveId,
+    location_elephant: ValveId,
     open_valves: u64,
     flow_rate: u32,
 }
@@ -86,7 +86,8 @@ struct State {
 impl State {
     pub fn new() -> State {
         State {
-            location: ValveId::from_str("AA"),
+            location_self: ValveId::from_str("AA"),
+            location_elephant: ValveId::from_str("AA"),
             open_valves: 0,
             flow_rate: 0,
         }
@@ -105,43 +106,82 @@ impl State {
 fn main() {
     let valves = load_input();
 
+    let n_useful_valves = valves.values().filter(|v| v.flow_rate > 0).count() as u32;
+
     // The states contain the state of the world as the key, and the amount of
     // pressure released so far as value.
     let mut states = HashMap::new();
     states.insert(State::new(), 0);
 
-    for minute in 0..30 {
-        let mut new_states = HashMap::with_capacity(states.len());
+    for minute in 0..26 {
+        let mut new_states: HashMap<State, u32> = HashMap::with_capacity(states.len());
 
-        // We take all of the states to the next minute, apply the flow of that.
+        // We can either move, or open a valve. Doing nothing is never more
+        // useful than moving.
         for (state, pressure_released) in states.iter() {
-            new_states.insert(state.clone(), pressure_released + state.flow_rate);
-        }
+            let new_pressure = pressure_released + state.flow_rate;
+            let mut insert_candidate = |mut state: State| {
+                // The human and the elephant play an interchangeable role. If
+                // we already consider state X, then we don't need to consider
+                // state X with human and elephant swapped. So put them in a
+                // canonical order, to make the state space smaller.
+                if state.location_elephant > state.location_self {
+                    std::mem::swap(&mut state.location_elephant, &mut state.location_self);
+                }
+                let pressure = new_states.entry(state).or_insert(new_pressure);
+                *pressure = new_pressure.max(*pressure);
+            };
 
-        let mut insert_candidate = |state, new_pressure| {
-            let pressure = new_states.entry(state).or_insert(new_pressure);
-            *pressure = new_pressure.max(*pressure);
-        };
+            // If all valves are already open, then the best we can do is wait,
+            // no need to move about any more.
+            if state.open_valves.count_ones() == n_useful_valves {
+                insert_candidate(state.clone());
+                continue;
+            }
 
-        // We can also either move, or open a valve.
-        for (state, pressure_released) in states.iter() {
             // If the valve is not open yet, we can open it. Only try to open
             // valves that have a positive flow rate, others are pointless and
             // lead to state explosion.
-            let valve = &valves[&state.location];
-            if valve.flow_rate > 0 && !state.is_open(valve) {
+            let valve_self = &valves[&state.location_self];
+            if valve_self.flow_rate > 0 && !state.is_open(valve_self) {
                 let mut new_state = state.clone();
-                new_state.open_valve(valve);
-                let new_pressure = pressure_released + state.flow_rate;
-                insert_candidate(new_state, new_pressure);
+                new_state.open_valve(valve_self);
+
+                // The elephant can also open one.
+                let valve_elephant = &valves[&state.location_elephant];
+                if valve_elephant.flow_rate > 0 && !new_state.is_open(valve_elephant) {
+                    let mut new_new_state = new_state.clone();
+                    new_new_state.open_valve(valve_elephant);
+                    insert_candidate(new_new_state);
+                }
+
+                // Alternatively, the elephant can move.
+                for id in &valves[&state.location_elephant].tunnels_to {
+                    let mut new_new_state = new_state.clone();
+                    new_new_state.location_elephant = *id;
+                    insert_candidate(new_new_state);
+                }
             }
 
             // Alternatively, we can move to a different tunnel.
-            for id in &valves[&state.location].tunnels_to {
+            for id in &valves[&state.location_self].tunnels_to {
                 let mut new_state = state.clone();
-                new_state.location = *id;
-                let new_pressure = pressure_released + state.flow_rate;
-                insert_candidate(new_state, new_pressure);
+                new_state.location_self = *id;
+
+                // The elephant can open a valve.
+                let valve_elephant = &valves[&state.location_elephant];
+                if valve_elephant.flow_rate > 0 && !new_state.is_open(valve_elephant) {
+                    let mut new_new_state = new_state.clone();
+                    new_new_state.open_valve(valve_elephant);
+                    insert_candidate(new_new_state);
+                }
+
+                // Alternatively, the elephant can move.
+                for id in &valves[&state.location_elephant].tunnels_to {
+                    let mut new_new_state = new_state.clone();
+                    new_new_state.location_elephant = *id;
+                    insert_candidate(new_new_state);
+                }
             }
         }
         println!(
