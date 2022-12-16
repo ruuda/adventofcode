@@ -1,12 +1,13 @@
-use std::collections::HashMap;
+use std::collections::{HashSet, HashMap, BTreeMap};
 use std::env;
 use std::fmt;
 use std::fs;
+use std::hash::Hash;
 use std::str::FromStr;
 
 // Valve id, identified by two letters, AA through ZZ.
 // We take the value of the ASCII bytes, little endian.
-#[derive(Eq, Ord, Hash, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Eq, Ord, Hash, PartialEq, PartialOrd)]
 struct ValveId(u16);
 
 impl ValveId {
@@ -71,9 +72,64 @@ fn load_input() -> HashMap<ValveId, Valve> {
     output
 }
 
+#[derive(Clone, Hash, Eq, PartialEq)]
+struct State {
+    location: ValveId,
+    open_valves: BTreeMap<ValveId, u32>,
+    pressure_released: u32,
+}
+
+impl State {
+    pub fn new() -> State {
+        State {
+            location: ValveId::from_str("AA"),
+            open_valves: BTreeMap::new(),
+            pressure_released: 0,
+        }
+    }
+
+    pub fn tick_minute(&self) -> State {
+        let mut state = self.clone();
+        state.pressure_released += self.open_valves.values().sum::<u32>();
+        state
+    }
+}
+
 fn main() {
     let valves = load_input();
-    for (id, v) in &valves {
-        println!("{} -> {} {:?}", id, v.flow_rate, v.tunnels_to);
+
+    let mut states = HashSet::new();
+    states.insert(State::new());
+
+    for minute in 0..30 {
+        let mut new_states = HashSet::with_capacity(states.len());
+
+        // We take all of the states to the next minute, apply the flow of that.
+        for state in states.iter() {
+            new_states.insert(state.tick_minute());
+        }
+
+        // Then for those states, we can also either move, or open a valve.
+        for state in states.iter() {
+            // If the valve is not open yet, we can open it.
+            if !state.open_valves.contains_key(&state.location) {
+                let mut new_state = state.tick_minute();
+                new_state.open_valves.insert(state.location, valves[&state.location].flow_rate);
+                new_states.insert(new_state);
+            }
+
+            // Alternatively, we can move to a different tunnel.
+            for id in &valves[&state.location].tunnels_to {
+                let mut new_state = state.tick_minute();
+                new_state.location = *id;
+                new_states.insert(new_state);
+            }
+        }
+        println!("minute={} states={} new_states={}", minute, states.len(), new_states.len());
+
+        states.extend(new_states.into_iter());
     }
+
+    let max_flow = states.iter().max_by_key(|s| s.pressure_released).unwrap();
+    println!("Pressure released: {}", max_flow.pressure_released);
 }
