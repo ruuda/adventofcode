@@ -125,9 +125,11 @@ fn main() {
 
         // We can also either move, or open a valve.
         for (state, pressure_released) in states.iter() {
-            // If the valve is not open yet, we can open it.
+            // If the valve is not open yet, we can open it. Only try to open
+            // valves that have a positive flow rate, others are pointless and
+            // lead to state explosion.
             let valve = &valves[&state.location];
-            if !state.is_open(valve) {
+            if valve.flow_rate > 0 && !state.is_open(valve) {
                 let mut new_state = state.clone();
                 new_state.open_valve(valve);
                 let new_pressure = pressure_released + state.flow_rate;
