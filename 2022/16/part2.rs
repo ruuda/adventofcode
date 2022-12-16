@@ -35,8 +35,6 @@ impl State {
 fn main() {
     let valves = load_input();
 
-    let n_useful_valves = valves.values().filter(|v| v.flow_rate > 0).count() as u32;
-
     // The states contain the state of the world as the key, and the amount of
     // pressure released so far as value.
     let mut states = HashMap::new();
@@ -61,12 +59,10 @@ fn main() {
                 *pressure = new_pressure.max(*pressure);
             };
 
-            // If all valves are already open, then the best we can do is wait,
-            // no need to move about any more.
-            if state.open_valves.count_ones() == n_useful_valves {
-                insert_candidate(state.clone());
-                continue;
-            }
+            // At first I had an early out here for when all valves are open,
+            // but this doesn't happen in the real input anyway, only in the
+            // example input which is small enough to be fast. So don't test
+            // whether all valves are open.
 
             // If the valve is not open yet, we can open it. Only try to open
             // valves that have a positive flow rate, others are pointless and
