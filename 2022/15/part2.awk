@@ -36,9 +36,9 @@ function abs(x) {
 }
 
 END {
-  for (x = 0; x <= maxcoord; x++) {
-    print("x =", x)
-    for (y = 0; y <= maxcoord; y++) {
+  for (y = 0; y <= maxcoord; y++) {
+    if (y % 10000 == 0) { print("y =", y) }
+    for (x = 0; x <= maxcoord; x++) {
       for (i = 0; i < n; i++) {
         sx = sensor_x[i]
         sy = sensor_y[i]
@@ -46,10 +46,20 @@ END {
         d = abs(sx - x) + abs(sy - y)
         if (d <= r) {
           # The beacon couldn't be here, because there is one closer to the
-          # sensor.
+          # sensor. We know the radius of the "circle", so we can already
+          # advance x, we don't need to continue to scan pointlessly.
+          tdist = abs(sy - y)
+          rt = r - tdist
+          # Subtract one, because the x++ will still execute.
+          if (sx + rt > x) {
+            x = sx + rt
+          }
           break
         }
       }
+
+      # If i == n, then we inspected all sensors, and we did not bail out, which
+      # means this position is left over as valid.
       if (i == n) {
         print("Beacon could be at", x, y)
         print("Tuning frequency is", x * 4000000 + y)
