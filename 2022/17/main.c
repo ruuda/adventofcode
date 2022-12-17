@@ -82,29 +82,10 @@ int main(int argc, const char** argv) {
   shape_t shapes[] = {
     { "####", 4, 1 },
     { ".#.###.#.", 3, 3 },
-    { "..#..####", 3, 3 },
+    { "###..#..#", 3, 3 },
     { "####", 1, 4 },
     { "####", 2, 2 },
   };
-
-  for (size_t i = 0; i < input_len; i++) {
-    printf("%c ", input[i]);
-  }
-
-  printf("\n");
-
-  for (size_t i = 0; i < nshapes; i++) {
-    shape_t* shape = shapes + i;
-    int j = 0;
-    for (int y = 0; y < shape->h; y++) {
-      for (int x = 0; x < shape->w; x++) {
-        printf("%c", shape->blob[j]);
-        j++;
-      }
-      printf("\n");
-    }
-    printf("\n");
-  }
 
   int field_height = 7;
   int tower_height = 0;
@@ -116,15 +97,18 @@ int main(int argc, const char** argv) {
   for (int round = 0; round < 2022; round++) {
     shape_t* shape = shapes + (round % nshapes);
     int x = 2;
+    // New blocks fall with 3 empty rows of space.
     int y = tower_height + 3;
     while (1) {
       char move = input[cursor];
       switch (move) {
         case '<':
           if (fits(field, shape, x - 1, y)) x--;
+          // printf("< -> x=%d y=%d\n", x, y);
           break;
         case '>':
           if (fits(field, shape, x + 1, y)) x++;
+          // printf("> -> x=%d y=%d\n", x, y);
           break;
         case '\n':
           // If we reach the end of the input, start over from the start.
@@ -135,27 +119,42 @@ int main(int argc, const char** argv) {
           exit(1);
       }
 
+      cursor++;
+
       if (fits(field, shape, x, y - 1)) {
         y--;
       } else {
         mark(field, shape, x, y);
         tower_height = max(tower_height, y + shape->h);
-        printf("Round %d at x=%d, y=%d\n", round, x, y);
 
         // If the field is no longer big enough to store everything, double it
         // in size.
-        if (tower_height + 7 >= field_height) {
+        if (tower_height + 8 >= field_height) {
           size_t prev_size = field_width * field_height;
           field = realloc(field, 2 * prev_size);
           memset(field + prev_size, 0, prev_size);
           field_height = 2 * field_height;
-          printf("reallocated\n");
+        }
+
+        printf("Round %d at x=%d, y=%d, tower_height=%d:\n", round, x, y, tower_height);
+
+        int print_field = 0;
+        if (print_field) {
+          for (int j = tower_height - 1; j >= 0; j--) {
+            for (int i = 0; i < field_width; i++) {
+              char at_field = field[j * field_width + i];
+              if (at_field != 0) {
+                printf("#");
+              } else {
+                printf(".");
+              }
+            }
+            printf("\n");
+          }
         }
 
         break;
       }
-
-      cursor++;
     }
   }
 
