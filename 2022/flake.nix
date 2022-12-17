@@ -15,10 +15,12 @@
           nativeBuildInputs = [
             pkgs.ghc
             pkgs.go
+            pkgs.guile
             pkgs.python3
             pkgs.rustc
             unison.packages.${system}.ucm
           ];
+          LOCALE_ARCHIVE = "${pkgs.glibcLocales}/lib/locale/locale-archive";
         };
       };
 }
