@@ -132,60 +132,58 @@ int main(int argc, const char** argv) {
   // Every time we cycle through all shapes, test the cursor position. As soon
   // as we find one that we have seen before, we might have found a cycle in the
   // tower pattern.
-  int max_cycles = 1000;
-  int cursors[max_cycles];
-  int cycle_tops[max_cycles];
+  int max_rounds = 5000;
+  int cursors[max_rounds];
+  int tops[max_rounds];
 
-  // At every cycle, for every column, store 1 + the highest non-empty y-coordinate.
-  int cycle_floors[max_cycles * field_width];
+  // At every round, for every column, store 1 + the highest non-empty y-coordinate.
+  int floors[max_rounds * field_width];
 
   long rounds = 2022; // For part 1.
   rounds = 1000000000000;
-  int cycle = 0;
 
   cursors[0] = 0;
-  cycle_tops[0] = 0;
-  for (int i = 0; i < field_width; i++) cycle_floors[i] = 0;
+  tops[0] = 0;
+  for (int i = 0; i < field_width; i++) floors[i] = 0;
 
   for (long round = 0; round < rounds; round++) {
     shape_t* shape = shapes + (round % nshapes);
+
+    // Per round we store:
+    // - The position of the cursor (it must match, otherwise we are not
+    //   periodic).
+    // - The height of the tower at that point (to compute the growth).
+    // - The height profile at that point (to ensure that the situations are
+    //   identical).
+    assert(round < max_rounds);
+    cursors[round] = cursor;
+    tops[round] = tower_height;
+    find_tops(field, floors + (round * field_width), tower_height + 1);
 
     // For part 2, simulating the 1e12 rounds is infeasible, but we can
     // check if the tower repeats. If so, we don't need to simulate the full
     // thing.
     if (round > 0 && round % nshapes == 0) {
-      cycle++;
-      assert(cycle < max_cycles);
-
-      // Per cycle we store:
-      // - The position of the cursor (it must match, otherwise we are not
-      //   periodic).
-      // - The height of the tower at that point (to compute the growth).
-      // - The height profile at that point (to ensure that the situations are
-      //   identical).
-      cursors[cycle] = cursor;
-      cycle_tops[cycle] = tower_height;
-      find_tops(field, cycle_floors + (cycle * field_width), tower_height + 1);
-
-      for (int i = 0; i < cycle; i++) {
+      int k = round;
+      for (int i = 0; i < k; i += nshapes) {
         if (cursors[i] == cursor) {
-          printf("Found possible cycle, from %d to %d.\n", i, cycle);
+          printf("Found possible cycle, from %d to %d.\n", i, k);
           printf("Early floor: ");
           for (int j = 0; j < field_width; j++) {
-            printf("%d, ", cycle_tops[i] - cycle_floors[i * field_width + j]);
+            printf("%d, ", tops[i] - floors[i * field_width + j]);
           }
           printf("\n");
 
           printf("Late floor: ");
           for (int j = 0; j < field_width; j++) {
-            printf("%d, ", cycle_tops[cycle] - cycle_floors[cycle * field_width + j]);
+            printf("%d, ", tops[k] - floors[k * field_width + j]);
           }
           printf("\n");
 
           int is_match = 1;
           for (int j = 0; j < field_width; j++) {
-            int d1 = cycle_tops[i] - cycle_floors[i * field_width + j];
-            int d2 = cycle_tops[cycle] - cycle_floors[cycle * field_width + j];
+            int d1 = tops[i] - floors[i * field_width + j];
+            int d2 = tops[k] - floors[k * field_width + j];
             if (d1 != d2) {
               is_match = 0;
               break;
@@ -194,30 +192,35 @@ int main(int argc, const char** argv) {
 
           if (is_match) {
             printf("Early slice:\n");
-            print_tower(field, cycle_tops[i] - 5, cycle_tops[i] + 1);
+            print_tower(field, tops[i] - 5, tops[i] + 1);
 
             printf("Late slice:\n");
-            print_tower(field, cycle_tops[cycle] - 5, cycle_tops[cycle] + 1);
+            print_tower(field, tops[k] - 5, tops[k] + 1);
 
-            long height_growth = cycle_tops[cycle] - cycle_tops[i];
-            long period = cycle - i;
-            long rounds_pre = i * nshapes;
-            long n_repeats = (rounds - rounds_pre) / (period * nshapes);
-            long rounds_repeat = n_repeats * period * nshapes;
+            long height_growth = tops[k] - tops[i];
+            long period = k - i;
+            long rounds_pre = i;
+            long n_repeats = (rounds - rounds_pre) / period;
+            long rounds_repeat = n_repeats * period;
             long rounds_post = rounds - rounds_pre - rounds_repeat;
-            long height_pre = cycle_tops[i];
+            long height_pre = tops[i];
             long height_repeats = height_growth * n_repeats;
+            long height_post = tops[i + rounds_post] - height_pre;
             printf("The tower would grow as follows:\n");
             printf(" - %ld rounds to height %ld\n", rounds_pre, height_pre);
             printf(
               " - %ld times %ld rounds, %ld height at a time, %ld total\n",
               n_repeats,
-              period * nshapes,
+              period,
               height_growth,
               height_repeats
             );
-            printf(" - %ld rounds to height %ld\n", rounds_post, 0);
-            exit(1);
+            printf(" - %ld rounds, %ld more height\n", rounds_post, height_post);
+            printf(
+              "For a total height of %ld.\n",
+              height_pre + height_repeats + height_post
+            );
+            exit(0);
           }
         }
       }
