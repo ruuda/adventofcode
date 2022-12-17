@@ -14,7 +14,6 @@ int field_width = 7;
 
 int fits(
   const char* field,
-  int field_height,
   const shape_t* shape,
   int x,
   int y
@@ -45,6 +44,29 @@ int fits(
   }
 
   return 1;
+}
+
+void mark(
+  char* field,
+  const shape_t* shape,
+  int x,
+  int y
+) {
+  for (int i = 0; i < shape->h; i++) {
+    for (int j = 0; j < shape->w; j++) {
+      char shape_at = shape->blob[i * shape->w + j];
+      assert(shape_at == '#' || shape_at == '.');
+      if (shape_at == '.') continue;
+
+      int py = y + i;
+      int px = x + j;
+      field[py * field_width + px] = '#';
+    }
+  }
+}
+
+int max(int x, int y) {
+  return x > y ? x : y;
 }
 
 int main(int argc, const char** argv) {
@@ -99,10 +121,10 @@ int main(int argc, const char** argv) {
       char move = input[cursor];
       switch (move) {
         case '<':
-          if (fits(field, field_height, shape, x - 1, y)) x--;
+          if (fits(field, shape, x - 1, y)) x--;
           break;
         case '>':
-          if (fits(field, field_height, shape, x + 1, y)) x++;
+          if (fits(field, shape, x + 1, y)) x++;
           break;
         case '\n':
           // If we reach the end of the input, start over from the start.
@@ -113,11 +135,23 @@ int main(int argc, const char** argv) {
           exit(1);
       }
 
-      if (fits(field, field_height, shape, x, y - 1)) {
+      if (fits(field, shape, x, y - 1)) {
         y--;
       } else {
-        // TODO: Mark in the field.
+        mark(field, shape, x, y);
+        tower_height = max(tower_height, y + shape->h);
         printf("Round %d at x=%d, y=%d\n", round, x, y);
+
+        // If the field is no longer big enough to store everything, double it
+        // in size.
+        if (tower_height + 7 >= field_height) {
+          size_t prev_size = field_width * field_height;
+          field = realloc(field, 2 * prev_size);
+          memset(field + prev_size, 0, prev_size);
+          field_height = 2 * field_height;
+          printf("reallocated\n");
+        }
+
         break;
       }
 
