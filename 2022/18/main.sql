@@ -37,6 +37,9 @@ insert into deltas values
 ;
 
 .print "Part 2 answer:"
+
+-- We do a flood fill of the exterior of the droplet, where we allow one cell
+-- of space around the droplet itself. This becomes `exterior`.
 with recursive exterior (x, y, z) as (
     values (
       (select min(x) - 1 from cubes),
@@ -53,12 +56,14 @@ with recursive exterior (x, y, z) as (
       deltas as d
     where
       true
+      -- Limit the positions to our exterior cube 1 wider than the droplet.
       and e.x + d.dx >= (select min(x) - 1 from cubes)
       and e.x + d.dx <= (select max(x) + 1 from cubes)
       and e.y + d.dy >= (select min(y) - 1 from cubes)
       and e.y + d.dy <= (select max(y) + 1 from cubes)
       and e.z + d.dz >= (select min(z) - 1 from cubes)
       and e.z + d.dz <= (select max(z) + 1 from cubes)
+      -- Positions that are part of the cube are not exterior.
       and not exists (
         select
           1
@@ -71,6 +76,8 @@ with recursive exterior (x, y, z) as (
           and e.z + d.dz = c.z
       )
 ),
+-- Now count the surface area of the exterior, in the same way that we counted
+-- the surface area of the droplet in part 1.
 num_sides as (
   select
     6
@@ -81,6 +88,9 @@ num_sides as (
   from
     exterior c1
 ),
+-- However, this counts both the inner surface of the exterior that encloses the
+-- droplet, and its outer surface of the cube. We don't want this outer surface,
+-- so compute its size so we can subtract it later.
 exterior_size as (
   select
     0
@@ -91,6 +101,7 @@ exterior_size as (
   from
     exterior
 )
+-- The area of the droplet then, is the inner area of the exterior.
 select
   sum(num_sides_exposed) - exterior_faces
 from
