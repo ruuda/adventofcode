@@ -25,6 +25,7 @@ class Amount(NamedTuple):
 
 
 class Blueprint(NamedTuple):
+    id_: int
     cost_ore: Amount
     cost_clay: Amount
     cost_obsidian: Amount
@@ -48,7 +49,7 @@ def load_blueprints() -> Iterable[Blueprint]:
         assert parts[24] == "geode" and parts[28] == "ore" and parts[31] == "obsidian."
         cost_geode = Amount(ore=int(parts[27]), clay=0, obsidian=int(parts[30]), geode=0)
 
-        yield Blueprint(cost_ore, cost_clay, cost_obsidian, cost_geode)
+        yield Blueprint(i + 1, cost_ore, cost_clay, cost_obsidian, cost_geode)
 
 
 class State(NamedTuple):
@@ -122,6 +123,7 @@ def evaluate_blueprint(bp: Blueprint) -> int:
     """
     heap = [State.initial()]
     states_excluded: Set[State] = set()
+    minutes_left = heap[0].minutes_left
 
     while True:
         state = heapq.heappop(heap)
@@ -132,17 +134,23 @@ def evaluate_blueprint(bp: Blueprint) -> int:
         # TODO: Figure out why duplicates pile up in the first place.
         states_excluded.add(state)
 
-        print("Inspecting candidate:", state)
+        if state.minutes_left < minutes_left:
+            minutes_left = state.minutes_left
+            print(f"{bp.id_=} {minutes_left=} {len(heap)=}")
 
         if state.minutes_left == 0:
-            print(state)
             return state.inventory.geode
 
         state.push_options(bp, heap)
 
 
 if __name__ == "__main__":
-    for bp in list(load_blueprints())[:1]:
-        max_geodes = evaluate_blueprint(bp)
-        print(max_geodes, bp)
+    total_quality = 0
 
+    for bp in list(load_blueprints()):
+        max_geodes = evaluate_blueprint(bp)
+        print(f"Blueprint {bp.id_} would open {max_geodes} geodes at most.")
+        quality_level = max_geodes * bp.id_
+        total_quality += quality_level
+
+    print(total_quality)
