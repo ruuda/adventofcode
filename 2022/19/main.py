@@ -15,13 +15,32 @@ class Amount(NamedTuple):
     geode: int
 
     def add(self: Amount, other: Amount) -> Amount:
-        return Amount(*(x + y for x, y in zip(self, other)))
+        #return Amount(*(x + y for x, y in zip(self, other)))
+        return Amount(
+            self.ore + other.ore,
+            self.clay + other.clay,
+            self.obsidian + other.obsidian,
+            self.geode + other.geode,
+        )
 
     def sub(self: Amount, other: Amount) -> Amount:
-        return Amount(*(x - y for x, y in zip(self, other)))
+        # return Amount(*(x - y for x, y in zip(self, other)))
+        return Amount(
+            self.ore - other.ore,
+            self.clay - other.clay,
+            self.obsidian - other.obsidian,
+            self.geode - other.geode,
+        )
 
     def can_afford(self: Amount, cost: Amount) -> bool:
-        return all(x >= y for x, y in zip(self, cost))
+        #return all(x >= y for x, y in zip(self, cost))
+        return (
+            True
+            and self.ore >= cost.ore
+            and self.clay >= cost.clay
+            and self.obsidian >= cost.obsidian
+            and self.geode >= cost.geode
+        )
 
 
 class Blueprint(NamedTuple):
@@ -68,10 +87,10 @@ class State(NamedTuple):
     inventory: Amount
 
     @staticmethod
-    def initial() -> State:
+    def initial(minutes_left: int) -> State:
         return State(
             neg_max_geodes=0,
-            minutes_left=24,
+            minutes_left=minutes_left,
             robots=Amount(1, 0, 0, 0),
             inventory=Amount(0, 0, 0, 0),
         )
@@ -116,12 +135,12 @@ class State(NamedTuple):
             heapq.heappush(heap, new_state)
 
 
-def evaluate_blueprint(bp: Blueprint) -> int:
+def evaluate_blueprint(bp: Blueprint, minutes: int) -> int:
     """
     Return the maximum number of geodes that can be opened in 24 minutes with
     this blueprint.
     """
-    heap = [State.initial()]
+    heap = [State.initial(minutes)]
     states_excluded: Set[State] = set()
     minutes_left = heap[0].minutes_left
 
@@ -144,13 +163,25 @@ def evaluate_blueprint(bp: Blueprint) -> int:
         state.push_options(bp, heap)
 
 
-if __name__ == "__main__":
+def part1() -> None:
     total_quality = 0
-
-    for bp in list(load_blueprints()):
-        max_geodes = evaluate_blueprint(bp)
+    for bp in load_blueprints():
+        max_geodes = evaluate_blueprint(bp, minutes=24)
         print(f"Blueprint {bp.id_} would open {max_geodes} geodes at most.")
         quality_level = max_geodes * bp.id_
         total_quality += quality_level
 
     print(total_quality)
+
+
+def part2() -> None:
+    prod_open = 1
+    for bp in list(load_blueprints())[:3]:
+        max_geodes = evaluate_blueprint(bp, minutes=32)
+        print(f"Blueprint {bp.id_} would open {max_geodes} geodes at most.")
+        prod_open *= max_geodes
+
+    print(prod_open)
+
+if __name__ == "__main__":
+    part2()
