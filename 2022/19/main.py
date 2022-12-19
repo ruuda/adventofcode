@@ -8,6 +8,19 @@ import heapq
 from typing import Iterable, List, NamedTuple, Set
 
 
+"""
+The central idea of this solution is: although it is difficult to say from a
+given state how many geodes we could open at the end, we can provide an upper
+bound: at most we could construct one new geode robot every minute. This
+estimate is unrealistic because we can't construct so many bots, but it is
+sufficent to search through the state tree.
+
+I wonder, don't we eventually visit all states anyway? I'm not sure, if the
+estimate is too high, we will explore the root of the tree fully before we move
+on to the leaves ...
+"""
+
+
 class Amount(NamedTuple):
     ore: int
     clay: int
@@ -15,7 +28,7 @@ class Amount(NamedTuple):
     geode: int
 
     def add(self: Amount, other: Amount) -> Amount:
-        #return Amount(*(x + y for x, y in zip(self, other)))
+        # Could be written briefer using zip and unpack, but that breaks mypyc.
         return Amount(
             self.ore + other.ore,
             self.clay + other.clay,
@@ -24,7 +37,7 @@ class Amount(NamedTuple):
         )
 
     def sub(self: Amount, other: Amount) -> Amount:
-        # return Amount(*(x - y for x, y in zip(self, other)))
+        # Could be written briefer using zip and unpack, but that breaks mypyc.
         return Amount(
             self.ore - other.ore,
             self.clay - other.clay,
@@ -33,7 +46,7 @@ class Amount(NamedTuple):
         )
 
     def can_afford(self: Amount, cost: Amount) -> bool:
-        #return all(x >= y for x, y in zip(self, cost))
+        # Could be written briefer using zip and unpack, but that breaks mypyc.
         return (
             True
             and self.ore >= cost.ore
