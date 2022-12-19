@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
-import sys
+from __future__ import annotations
 
-from typing import Iterable, NamedTuple
+import sys
+import heapq
+
+from typing import Iterable, List, NamedTuple, Set
 
 
 class Amount(NamedTuple):
@@ -10,6 +13,15 @@ class Amount(NamedTuple):
     clay: int
     obsidian: int
     geode: int
+
+    def add(self: Amount, other: Amount) -> Amount:
+        return Amount(*(x + y for x, y in zip(self, other)))
+
+    def sub(self: Amount, other: Amount) -> Amount:
+        return Amount(*(x - y for x, y in zip(self, other)))
+
+    def can_afford(self: Amount, cost: Amount) -> bool:
+        return all(x >= y for x, y in zip(self, cost))
 
 
 class Blueprint(NamedTuple):
@@ -39,7 +51,98 @@ def load_blueprints() -> Iterable[Blueprint]:
         yield Blueprint(cost_ore, cost_clay, cost_obsidian, cost_geode)
 
 
+class State(NamedTuple):
+    # An upper bound on the number of geodes that can be produced.
+    # Negated because Python has a min-heap, but we want to extract the element
+    # with the maximum first.
+    neg_max_geodes: int
+
+    # How many steps there are left.
+    minutes_left: int
+
+    # How many resource-producing robots we currently have of each kind.
+    robots: Amount
+
+    # How much resources we currently have of each kind.
+    inventory: Amount
+
+    @staticmethod
+    def initial() -> State:
+        return State(
+            neg_max_geodes=0,
+            minutes_left=24,
+            robots=Amount(1, 0, 0, 0),
+            inventory=Amount(0, 0, 0, 0),
+        )
+
+    def push_options(self, bp: Blueprint, heap: List[State]) -> None:
+        assert self.minutes_left > 0
+
+        candidates = [
+            (Amount(1, 0, 0, 0), bp.cost_ore),
+            (Amount(0, 1, 0, 0), bp.cost_clay),
+            (Amount(0, 0, 1, 0), bp.cost_obsidian),
+            (Amount(0, 0, 0, 1), bp.cost_geode),
+            # Not producing anything is also an option, sometimes the only one.
+            (Amount(0, 0, 0, 0), Amount(0, 0, 0, 0)),
+        ]
+        for candidate, cost in candidates:
+            if not self.inventory.can_afford(cost):
+                continue
+
+            # Pay for the robots we built, then add the new inventory produced
+            # by the robots we have.
+            new_inventory = self.inventory.sub(cost).add(self.robots)
+
+            new_robots = self.robots.add(candidate)
+
+            # In the remaining n minutes, we will produce at most this many
+            # geodes, assuming we produce one robot in each of the remaining
+            # ticks, and every robot produces one geode. Then we get this
+            # arithmetic series, which works out to the value below.
+            n = self.minutes_left - 1
+            k = new_robots.geode
+            geodes_produced_n = n * (2 * k + n - 1) // 2
+            max_geodes = new_inventory.geode + geodes_produced_n
+
+            new_state = State(
+                neg_max_geodes=-max_geodes,
+                minutes_left=n,
+                robots=new_robots,
+                inventory=new_inventory,
+            )
+
+            heapq.heappush(heap, new_state)
+
+
+def evaluate_blueprint(bp: Blueprint) -> int:
+    """
+    Return the maximum number of geodes that can be opened in 24 minutes with
+    this blueprint.
+    """
+    heap = [State.initial()]
+    states_excluded: Set[State] = set()
+
+    while True:
+        state = heapq.heappop(heap)
+
+        if state in states_excluded:
+            continue
+
+        # TODO: Figure out why duplicates pile up in the first place.
+        states_excluded.add(state)
+
+        print("Inspecting candidate:", state)
+
+        if state.minutes_left == 0:
+            print(state)
+            return state.inventory.geode
+
+        state.push_options(bp, heap)
+
+
 if __name__ == "__main__":
-    for bp in load_blueprints():
-        print(bp)
+    for bp in list(load_blueprints())[:1]:
+        max_geodes = evaluate_blueprint(bp)
+        print(max_geodes, bp)
 
