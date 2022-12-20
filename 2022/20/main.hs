@@ -2,8 +2,16 @@
 
 module Main where
 
+import Control.Exception (assert)
 import Control.Monad (forM_, foldM_)
 import Data.List (foldl')
+
+-- Insert element `x` at so it is at index `i` in the result.
+insertAt :: Int -> a -> [a] -> [a]
+insertAt i x xs
+  = assert (i >= 0)
+  $ assert (i <= length xs)
+  $ (take i xs) <> [x] <> (drop i xs)
 
 rotateAt :: Int -> [(Int, Int)] -> [(Int, Int)]
 rotateAt i xs =
@@ -11,21 +19,9 @@ rotateAt i xs =
     prefix = take i xs
     suffix = drop (i + 1) xs
     (j, n) = xs !! i
-    np = length prefix
-    ns = length suffix
-    -- NB: The puzzle's definition of moving backward is a bit weird, I would
-    -- expect this:
-    -- m  = if n >= 0 then n else ns + np + n + 1
-    -- But when it wraps around, it makes one additional jump, so use -1 instead
-    -- of -1.
-    m  = if n >= 0 then n else ns + np + n
-    m' = if n > 0 then n - ns else np + n
+    newIndex = (i + n) `mod` (length xs - 1)
   in
-    case () of
-      () | n >= 0 && n < ns -> prefix <> (take m suffix) <> [(j, n)] <> (drop m suffix)
-      () | n > ns           -> (take m' prefix) <> [(j, n)] <> (drop m' prefix) <> suffix
-      () | n < 0 && n > -np -> (take m' prefix) <> [(j, n)] <> (drop m' prefix) <> suffix
-      () | otherwise        -> prefix <> (take m suffix) <> [(j, n)] <> (drop m suffix)
+    insertAt newIndex (j, n) (prefix <> suffix)
 
 rotateNth :: Int -> [(Int, Int)] -> [(Int, Int)]
 rotateNth n xs =
@@ -36,7 +32,7 @@ rotateNth n xs =
 
 main :: IO ()
 main = do
-  fileLines <- lines <$> readFile "example.txt"
+  fileLines <- lines <$> readFile "input.txt"
   let
     numbers :: [Int]
     numbers = fmap read fileLines
@@ -51,13 +47,13 @@ main = do
     elem3000 = result !! ((indexOf0 + 3000) `mod` (length numbers))
     answer = elem1000 + elem2000 + elem3000
 
-  putStrLn $ show elem1000
-  putStrLn $ show elem2000
-  putStrLn $ show elem3000
-  putStrLn $ show answer
-
   -- foldM_ (\xs i -> do
   --     putStrLn $ "Before " <> (show i) <> ": " <> show (fmap snd xs)
   --     pure $ rotateNth i xs
   --   ) withIndex indices
+  -- putStrLn $ "After: " <> (show result)
 
+  putStrLn $ show elem1000
+  putStrLn $ show elem2000
+  putStrLn $ show elem3000
+  putStrLn $ show answer
