@@ -45,11 +45,19 @@ main = do
     resultIndex = foldl' (flip rotateNth) withIndex indices
     result = fmap snd resultIndex
 
-    -- i = fst $ head $ filter (\(_, (j, _)) -> j == n) $ zip [0..] xs
+    indexOf0 = fst $ head $ filter (\(_i, n) -> n == 0) $ zip [0..] result
+    elem1000 = result !! ((indexOf0 + 1000) `mod` (length numbers))
+    elem2000 = result !! ((indexOf0 + 2000) `mod` (length numbers))
+    elem3000 = result !! ((indexOf0 + 3000) `mod` (length numbers))
+    answer = elem1000 + elem2000 + elem3000
+
+  putStrLn $ show elem1000
+  putStrLn $ show elem2000
+  putStrLn $ show elem3000
+  putStrLn $ show answer
 
   -- foldM_ (\xs i -> do
   --     putStrLn $ "Before " <> (show i) <> ": " <> show (fmap snd xs)
   --     pure $ rotateNth i xs
   --   ) withIndex indices
 
-  putStrLn $ show result
