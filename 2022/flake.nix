@@ -15,8 +15,8 @@
           nativeBuildInputs = [
             pkgs.ghc
             pkgs.go
-            pkgs.guile
             pkgs.python3
+            pkgs.racket
             pkgs.rustc
             unison.packages.${system}.ucm
           ];
