@@ -45,27 +45,21 @@ class Op(Expr):
                 case "*":
                     return Val(lhs.value * rhs.value)
                 case "/":
-                    # Only evaluate the division if it is exact, otherwise keep
-                    # it as a fraction and hope that we can simplify later on.
                     q = lhs.value // rhs.value
-                    if q * rhs.value == lhs.value:
-                        return Val(q)
-                    else:
-                        return Val(lhs.value / rhs.value)
-                        # return Op(lhs, "/", rhs)
+                    assert q * rhs.value == lhs.value
+                    return Val(q)
                 case _:
                     raise ValueError
 
         elif isinstance(lhs, Val):
             # Push values to the right as much as possible. We can do this for
             # all commutative operators.
-            if self.op == "/":
-                return Op(lhs, "/", rhs)
+            if self.op in ("/", "-"):
+                return Op(lhs, self.op, rhs)
             else:
-                return Op(rhs, self.op, lhs)
+                return Op(rhs, self.op, lhs).simplify()
 
-        else:
-            return Op(lhs, self.op, rhs)
+        return Op(lhs, self.op, rhs)
 
 
 @dataclass(frozen=True)
@@ -80,11 +74,15 @@ class Eq(Expr):
         # By default, push all complexity into the right-hand side and
         # simplify on the left. If we are all the way simplified on the left
         # already, then go the other way around.
+        new_rhs: Expr
 
-        if isinstance(lhs, Op):
+        if isinstance(lhs, Var):
+            # If lhs is a variable, then we are done.
+            return Eq(lhs, rhs)
+
+        elif isinstance(lhs, Op):
             # We have an expression of the form "a <op> b = c",
             # solving for a, we get "a = c <inv-op> b".
-            new_rhs: Expr
             match lhs.op:
                 case "+":
                     new_rhs = Op(rhs, "-", lhs.rhs)
@@ -99,14 +97,9 @@ class Eq(Expr):
 
             return Eq(lhs.lhs, new_rhs).simplify()
 
-        elif isinstance(lhs, Var):
-            # If lhs is a variable, then we are done.
-            return Eq(lhs, rhs)
-
         elif isinstance(lhs, Val) and isinstance(rhs, Op):
             # We have an expression of the form "c1 = a <op> b",
             # solving for a, we get "a = c1 <inv-op> b".
-            new_rhs: Expr
             match rhs.op:
                 case "+":
                     new_rhs = Op(lhs, "-", rhs.rhs)
@@ -175,6 +168,4 @@ if __name__ == "__main__":
     heap["root"] = Thunk(root.lhs, "=", root.rhs)
     heap["humn"] = None
     root_expr = eval(heap, "root")
-    import pprint
-    pprint.pprint(root_expr.simplify())
     print("Part 2 answer: ", root_expr.simplify())
