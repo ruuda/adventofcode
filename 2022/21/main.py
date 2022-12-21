@@ -75,6 +75,12 @@ class Eq(Expr):
         # simplify on the left. If we are all the way simplified on the left
         # already, then go the other way around.
         new_rhs: Expr
+        inverse = {
+            "+": "-",
+            "-": "+",
+            "*": "/",
+            "/": "*",
+        }
 
         if isinstance(lhs, Var):
             # If lhs is a variable, then we are done.
@@ -83,35 +89,13 @@ class Eq(Expr):
         elif isinstance(lhs, Op):
             # We have an expression of the form "a <op> b = c",
             # solving for a, we get "a = c <inv-op> b".
-            match lhs.op:
-                case "+":
-                    new_rhs = Op(rhs, "-", lhs.rhs)
-                case "-":
-                    new_rhs = Op(rhs, "+", lhs.rhs)
-                case "*":
-                    new_rhs = Op(rhs, "/", lhs.rhs)
-                case "/":
-                    new_rhs = Op(rhs, "*", lhs.rhs)
-                case _:
-                    raise ValueError
-
+            new_rhs = Op(rhs, inverse[lhs.op], lhs.rhs)
             return Eq(lhs.lhs, new_rhs).simplify()
 
         elif isinstance(lhs, Val) and isinstance(rhs, Op):
             # We have an expression of the form "c1 = a <op> b",
             # solving for a, we get "a = c1 <inv-op> b".
-            match rhs.op:
-                case "+":
-                    new_rhs = Op(lhs, "-", rhs.rhs)
-                case "-":
-                    new_rhs = Op(lhs, "+", rhs.rhs)
-                case "*":
-                    new_rhs = Op(lhs, "/", rhs.rhs)
-                case "/":
-                    new_rhs = Op(lhs, "*", rhs.rhs)
-                case _:
-                    raise ValueError
-
+            new_rhs = Op(lhs, inverse[rhs.op], rhs.rhs)
             return Eq(rhs.lhs, new_rhs).simplify()
 
         else:
