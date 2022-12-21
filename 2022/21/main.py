@@ -1,49 +1,180 @@
 #!/usr/bin/env python3
 
-from typing import Dict, NamedTuple 
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Dict, Optional
 import sys
 
-class Thunk(NamedTuple):
+@dataclass(frozen=True)
+class Expr:
+    def simplify(self) -> Expr:
+        raise NotImplementedError
+
+
+@dataclass(frozen=True)
+class Var(Expr):
+    def simplify(self) -> Var:
+        return self
+
+
+@dataclass(frozen=True)
+class Val(Expr):
+    value: int
+
+    def simplify(self) -> Val:
+        return self
+
+
+@dataclass(frozen=True)
+class Op(Expr):
+    lhs: Expr
+    op: str
+    rhs: Expr
+
+    def simplify(self) -> Expr:
+        lhs = self.lhs.simplify()
+        rhs = self.rhs.simplify()
+
+        if isinstance(lhs, Val) and isinstance(rhs, Val):
+            match self.op:
+                case "+":
+                    return Val(lhs.value + rhs.value)
+                case "-":
+                    return Val(lhs.value - rhs.value)
+                case "*":
+                    return Val(lhs.value * rhs.value)
+                case "/":
+                    # Only evaluate the division if it is exact, otherwise keep
+                    # it as a fraction and hope that we can simplify later on.
+                    q = lhs.value // rhs.value
+                    if q * rhs.value == lhs.value:
+                        return Val(q)
+                    else:
+                        return Val(lhs.value / rhs.value)
+                        # return Op(lhs, "/", rhs)
+                case _:
+                    raise ValueError
+
+        elif isinstance(lhs, Val):
+            # Push values to the right as much as possible. We can do this for
+            # all commutative operators.
+            if self.op == "/":
+                return Op(lhs, "/", rhs)
+            else:
+                return Op(rhs, self.op, lhs)
+
+        else:
+            return Op(lhs, self.op, rhs)
+
+
+@dataclass(frozen=True)
+class Eq(Expr):
+    lhs: Expr
+    rhs: Expr
+
+    def simplify(self) -> Expr:
+        lhs = self.lhs.simplify()
+        rhs = self.rhs.simplify()
+
+        # By default, push all complexity into the right-hand side and
+        # simplify on the left. If we are all the way simplified on the left
+        # already, then go the other way around.
+
+        if isinstance(lhs, Op):
+            # We have an expression of the form "a <op> b = c",
+            # solving for a, we get "a = c <inv-op> b".
+            new_rhs: Expr
+            match lhs.op:
+                case "+":
+                    new_rhs = Op(rhs, "-", lhs.rhs)
+                case "-":
+                    new_rhs = Op(rhs, "+", lhs.rhs)
+                case "*":
+                    new_rhs = Op(rhs, "/", lhs.rhs)
+                case "/":
+                    new_rhs = Op(rhs, "*", lhs.rhs)
+                case _:
+                    raise ValueError
+
+            return Eq(lhs.lhs, new_rhs).simplify()
+
+        elif isinstance(lhs, Var):
+            # If lhs is a variable, then we are done.
+            return Eq(lhs, rhs)
+
+        elif isinstance(lhs, Val) and isinstance(rhs, Op):
+            # We have an expression of the form "c1 = a <op> b",
+            # solving for a, we get "a = c1 <inv-op> b".
+            new_rhs: Expr
+            match rhs.op:
+                case "+":
+                    new_rhs = Op(lhs, "-", rhs.rhs)
+                case "-":
+                    new_rhs = Op(lhs, "+", rhs.rhs)
+                case "*":
+                    new_rhs = Op(lhs, "/", rhs.rhs)
+                case "/":
+                    new_rhs = Op(lhs, "*", rhs.rhs)
+                case _:
+                    raise ValueError
+
+            return Eq(rhs.lhs, new_rhs).simplify()
+
+        else:
+            return Eq(lhs, rhs)
+
+
+@dataclass(frozen=True)
+class Thunk:
     lhs: str
     op: str
     rhs: str
 
 
-def load_expressions() -> Dict[str, Thunk | int]:
-    result: Dict[str, Thunk | int] = {}
+def load_expressions() -> Dict[str, Thunk | int | None]:
+    result: Dict[str, Thunk | int | None] = {}
+
     for line in open(sys.argv[1], "r", encoding="utf-8"):
         parts = line.strip().split(" ")
         key = parts[0][:-1]  # Cut off the trailing colon
         if len(parts) > 2:
-            result[key] = Thunk(*parts[1:])
+            result[key] = Thunk(parts[1], parts[2], parts[3])
         else:
             result[key] = int(parts[1])
 
     return result
 
 
-def eval(heap: Dict[str, Thunk | int], key: str) -> int:
+def eval(heap: Dict[str, Thunk | int | None], key: str) -> Expr:
     value = heap[key]
+
     if isinstance(value, int):
-        return value
-    else:
+        return Val(value)
+
+    elif value is None:
+        return Var()
+
+    elif isinstance(value, Thunk):
         lhs = eval(heap, value.lhs)
         rhs = eval(heap, value.rhs)
-        match value.op:
-            case '+':
-                result = lhs + rhs
-            case '-':
-                result = lhs - rhs
-            case '*':
-                result = lhs * rhs
-            case '/':
-                result = lhs // rhs
-            case _:
-                raise Exception("Invalid operation: " + value.op)
-        heap[key] = result
-        return result
+        if value.op == "=":
+            return Eq(lhs, rhs)
+        else:
+            return Op(lhs, value.op, rhs)
 
 
 if __name__ == "__main__":
+    heap: Dict[str, int | Thunk | None] = load_expressions()
+    root_expr = eval(heap, "root")
+    print("Part 1 answer: ", root_expr.simplify())
+
     heap = load_expressions()
-    print(eval(heap, "root"))
+    root = heap["root"]
+    assert isinstance(root, Thunk)
+    heap["root"] = Thunk(root.lhs, "=", root.rhs)
+    heap["humn"] = None
+    root_expr = eval(heap, "root")
+    import pprint
+    pprint.pprint(root_expr.simplify())
+    print("Part 2 answer: ", root_expr.simplify())
