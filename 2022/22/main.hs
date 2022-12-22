@@ -109,33 +109,45 @@ advanceTorus board@(Board w h cells) (Pos heading cx cy) = go newX newY
 -- we need to make when we traverse the edge.
 neighbors :: Int -> ((Int, Int), (Int, Int), (Int, Int), (Int, Int))
 neighbors fid = case fid of
-  1 -> ((6, 2), (2, 2), (3, 1), (4, 0))
-  2 -> ((3, 0), (1, 2), (6, 3), (5, 2))
-  3 -> ((4, 0), (1, 3), (2, 0), (5, 1))
-  4 -> ((6, 3), (1, 0), (3, 0), (5, 0))
-  5 -> ((6, 0), (4, 0), (3, 3), (2, 2))
-  6 -> ((1, 2), (4, 1), (5, 0), (2, 1))
+  -- The following are for the example, but my true input is laid out differently.
+  -- 1 -> ((6, 2), (2, 2), (3, 1), (4, 0))
+  -- 2 -> ((3, 0), (1, 2), (6, 3), (5, 2))
+  -- 3 -> ((4, 0), (1, 3), (2, 0), (5, 1))
+  -- 4 -> ((6, 3), (1, 0), (3, 0), (5, 0))
+  -- 5 -> ((6, 0), (4, 0), (3, 3), (2, 2))
+  -- 6 -> ((1, 2), (4, 1), (5, 0), (2, 1))
+  1 -> ((2, 0), (6, 3), (4, 2), (3, 0))
+  2 -> ((5, 2), (6, 0), (1, 0), (3, 3))
+  3 -> ((2, 1), (1, 0), (4, 1), (5, 0))
+  4 -> ((5, 0), (3, 3), (1, 2), (6, 0))
+  5 -> ((2, 2), (3, 0), (4, 0), (6, 3))
+  6 -> ((5, 1), (4, 0), (1, 1), (2, 0))
   _ -> error "Invalid face id."
 
 faceId :: Int -> Int -> Int
-faceId fx fy = case (fx, fy) of
-  (2, 0) -> 1
-  (0, 1) -> 2
-  (1, 1) -> 3
-  (2, 1) -> 4
-  (2, 2) -> 5
-  (3, 2) -> 6
-  _ -> error $ "Invalid face coordinate " <> (show (fx, fy)) <> ", should be on the map."
+faceId fx fy = go [1..6]
+  where
+    go [] = error $ "Invalid face coordinate " <> (show (fx, fy)) <> ", should be on the map."
+    go (n:_) | facePos n == (fx, fy) = n
+    go (_:more) = go more
 
 -- Inverse of faceId
 facePos :: Int -> (Int, Int)
 facePos = \case
-  1 -> (2, 0)
-  2 -> (0, 1)
+  -- The following are for the example input.
+  -- 1 -> (2, 0)
+  -- 2 -> (0, 1)
+  -- 3 -> (1, 1)
+  -- 4 -> (2, 1)
+  -- 5 -> (2, 2)
+  -- 6 -> (3, 2)
+  -- The following are for my actual input, which is laid out differently.
+  1 -> (1, 0)
+  2 -> (2, 0)
   3 -> (1, 1)
-  4 -> (2, 1)
-  5 -> (2, 2)
-  6 -> (3, 2)
+  4 -> (0, 2)
+  5 -> (1, 2)
+  6 -> (0, 3)
   _ -> error "Invalid face id."
 
 -- Move one step forward while wrapping around the cube if needed. This is a
@@ -144,7 +156,7 @@ facePos = \case
 advanceCube :: Board -> Pos -> Pos
 advanceCube board@(Board w h cells) (Pos heading cx cy) =
   let
-    faceSize = h `div` 3
+    faceSize = h `div` 4 -- 3 for the example, 4 for the actual input.
     (fx, fy) = (cx `div` faceSize, cy `div` faceSize)
     (px, py) = (cx `mod` faceSize, cy `mod` faceSize)
     face = faceId fx fy
@@ -206,9 +218,5 @@ main = do
     initialPos = initialPosition board
     finalPos1 = foldl' (flip $ move board advanceTorus) initialPos moves
     finalPos2 = foldl' (flip $ move board advanceCube) initialPos moves
-  -- putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Right (50*3-1) 0)
-  -- putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Up (50*3-1) 0)
-  -- putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Left (50*2) 0)
-  -- putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Down (50*2) (50-1))
   putStrLn $ "Part 1 answer: " <> (show $ password finalPos1)
   putStrLn $ "Part 2 answer: " <> (show $ password finalPos2)
