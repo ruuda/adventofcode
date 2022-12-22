@@ -149,7 +149,7 @@ advanceCube board@(Board w h cells) (Pos heading cx cy) =
     (px, py) = (cx `mod` faceSize, cy `mod` faceSize)
     face = faceId fx fy
     (right, up, left, down) = neighbors face
-    rotateLeft (h, x, y) = (turnLeft h, faceSize - 1 - y, x)
+    rotateLeft (h, x, y) = (turnLeft h, y, faceSize - 1 - x)
     rotateLeftN 0 (h, x, y) = (h, x, y)
     rotateLeftN n (h, x, y) = rotateLeftN (n - 1) (rotateLeft (h, x, y))
     (x, y) = case heading of
@@ -200,15 +200,15 @@ password (Pos heading x y) =
 
 main :: IO ()
 main = do
-  fileContents <- readFile "example.txt"
+  fileContents <- readFile "input.txt"
   let
     (board, moves) = parseInput fileContents
     initialPos = initialPosition board
     finalPos1 = foldl' (flip $ move board advanceTorus) initialPos moves
     finalPos2 = foldl' (flip $ move board advanceCube) initialPos moves
-  putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Right 11 0)
-  putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Up 11 0)
-  putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Left 8 0)
-  putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Down 8 3)
+  -- putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Right (50*3-1) 0)
+  -- putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Up (50*3-1) 0)
+  -- putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Left (50*2) 0)
+  -- putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Down (50*2) (50-1))
   putStrLn $ "Part 1 answer: " <> (show $ password finalPos1)
   putStrLn $ "Part 2 answer: " <> (show $ password finalPos2)
