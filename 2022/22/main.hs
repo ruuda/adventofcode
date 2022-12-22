@@ -1,17 +1,19 @@
 #!/usr/bin/env runhaskell
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 
 module Main where
 
+import Data.List (foldl')
 import Data.Char (isDigit)
 import Prelude hiding (Left, Right)
 
-data Field = Field
-  { fWidth :: Int
-  , fHeight :: Int
-  , fData :: [[Char]]
+data Board = Board
+  { boardWidth :: !Int
+  , boardHeight :: !Int
+  , boardCells :: [[Char]]
   } deriving (Show)
 
 data Heading
@@ -21,11 +23,24 @@ data Heading
   | Up
   deriving (Show)
 
+turnLeft :: Heading -> Heading
+turnLeft = \case
+  Right -> Up
+  Down  -> Right
+  Left  -> Down
+  Up    -> Left
+
+turnRight :: Heading -> Heading
+turnRight = turnLeft . turnLeft . turnLeft
+
 data Move
   = TurnLeft
   | TurnRight
   | Ahead Int
   deriving (Show)
+
+-- Position on the board.
+data Pos = Pos !Heading !Int !Int deriving (Show)
 
 parseMoves :: String -> [Move]
 parseMoves str = case str of
@@ -40,20 +55,91 @@ parseMoves str = case str of
     'R' -> TurnRight : parseMoves rest
     _   -> error "Invalid direction."
 
-parseInput :: String -> (Field, [Move])
+parseInput :: String -> (Board, [Move])
 parseInput contents =
   let
     fileLines = lines contents
     height = (length fileLines) - 2
-    fieldData = take height fileLines
-    field = Field (length $ head fieldData) height fieldData
+    cells = take height fileLines
+    board = Board (length $ head cells) height cells
     moves = parseMoves $ last fileLines
   in
-    (field, moves)
+    (board, moves)
+
+initialPosition :: Board -> Pos
+initialPosition (Board w h cells) =
+  let
+    -- Find the leftmost open cell.
+    x = fst $ head $ filter (\(_i, ch) -> ch == '.') $ zip [0..] $ head cells
+    y = 0
+  in
+    Pos Right x y
+
+boardAt :: Board -> Pos -> Char
+boardAt (Board _w _h cells) (Pos _heading x y) =
+  let
+    row = cells !! y
+  in
+    -- Some rows are not padded with spaces at the end, fill those in.
+    if x < length row then row !! x else ' '
+
+-- Move one step forward while wrapping around the board if needed. The new cell
+-- can contain a wall.
+advance :: Board -> Pos -> Pos
+advance board@(Board w h cells) (Pos heading cx cy) = go newX newY
+  where
+    (newX, newY) = case heading of
+      Right -> (cx + 1, cy)
+      Down  -> (cx, cy + 1)
+      Left  -> (cx - 1, cy)
+      Up    -> (cx, cy - 1)
+
+    go x y | x >= w = go (x - w) y
+           | x <  0 = go (x + w) y
+           | y >= h = go x (y - h)
+           | y <  0 = go x (y + h)
+             -- If we find an cell that is part of the board, we are done.
+           | boardAt board (Pos heading x y) /= ' ' = Pos heading x y
+             -- If we find a cell that is not part of the board, step one
+             -- further.
+           | otherwise = advance board (Pos heading x y)
+
+move :: Board -> Move -> Pos -> Pos
+move board m pos@(Pos heading x y) = case m of
+  TurnLeft  -> Pos (turnLeft heading) x y
+  TurnRight -> Pos (turnRight heading) x y
+  Ahead 0   -> Pos heading x y
+  Ahead n   ->
+    let
+      aheadPos = advance board pos
+    in
+      case boardAt board aheadPos of
+        -- If the position ahead is empty, we move there and continue.
+        '.' -> move board (Ahead $ n - 1) aheadPos
+        -- If we hit a wall, we cannot move further and stay at the current pos.
+        '#' -> move board (Ahead 0) pos
+        _   -> error "Position should be inside the board."
+
+password :: Pos -> Int
+password (Pos heading x y) =
+  let
+    facing = case heading of
+      Right -> 0
+      Down  -> 1
+      Left  -> 2
+      Up    -> 3
+    column = 1 + x
+    row = 1 + y
+  in
+    1000 * row + 4 * column + facing
 
 main :: IO ()
 main = do
-  fileContents <- readFile "example.txt"
-  let (field, moves) = parseInput fileContents
-  putStrLn $ show field
-  putStrLn $ show moves
+  fileContents <- readFile "input.txt"
+  let
+    (board, moves) = parseInput fileContents
+    initialPos = initialPosition board
+    finalPos = foldl' (flip $ move board) initialPos moves
+  putStrLn $ show initialPos
+  putStrLn $ show finalPos
+  putStrLn $ show $ password finalPos
