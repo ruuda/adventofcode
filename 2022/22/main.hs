@@ -85,8 +85,8 @@ boardAt (Board _w _h cells) (Pos _heading x y) =
 
 -- Move one step forward while wrapping around the board if needed. The new cell
 -- can contain a wall.
-advance :: Board -> Pos -> Pos
-advance board@(Board w h cells) (Pos heading cx cy) = go newX newY
+advanceTorus :: Board -> Pos -> Pos
+advanceTorus board@(Board w h cells) (Pos heading cx cy) = go newX newY
   where
     (newX, newY) = case heading of
       Right -> (cx + 1, cy)
@@ -102,10 +102,10 @@ advance board@(Board w h cells) (Pos heading cx cy) = go newX newY
            | boardAt board (Pos heading x y) /= ' ' = Pos heading x y
              -- If we find a cell that is not part of the board, step one
              -- further.
-           | otherwise = advance board (Pos heading x y)
+           | otherwise = advanceTorus board (Pos heading x y)
 
-move :: Board -> Move -> Pos -> Pos
-move board m pos@(Pos heading x y) = case m of
+move :: Board -> (Board -> Pos -> Pos) -> Move -> Pos -> Pos
+move board advance m pos@(Pos heading x y) = case m of
   TurnLeft  -> Pos (turnLeft heading) x y
   TurnRight -> Pos (turnRight heading) x y
   Ahead 0   -> Pos heading x y
@@ -115,9 +115,9 @@ move board m pos@(Pos heading x y) = case m of
     in
       case boardAt board aheadPos of
         -- If the position ahead is empty, we move there and continue.
-        '.' -> move board (Ahead $ n - 1) aheadPos
+        '.' -> move board advance (Ahead $ n - 1) aheadPos
         -- If we hit a wall, we cannot move further and stay at the current pos.
-        '#' -> move board (Ahead 0) pos
+        '#' -> move board advance (Ahead 0) pos
         _   -> error "Position should be inside the board."
 
 password :: Pos -> Int
@@ -139,7 +139,8 @@ main = do
   let
     (board, moves) = parseInput fileContents
     initialPos = initialPosition board
-    finalPos = foldl' (flip $ move board) initialPos moves
+    finalPos1 = foldl' (flip $ move board advanceTorus) initialPos moves
+    finalPos2 = foldl' (flip $ move board (error "TODO")) initialPos moves
   putStrLn $ show initialPos
-  putStrLn $ show finalPos
-  putStrLn $ show $ password finalPos
+  putStrLn $ "Part 1 answer: " <> (show $ password finalPos1)
+  putStrLn $ "Part 2 answer: " <> (show $ password finalPos2)
