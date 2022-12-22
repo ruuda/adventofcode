@@ -104,6 +104,71 @@ advanceTorus board@(Board w h cells) (Pos heading cx cy) = go newX newY
              -- further.
            | otherwise = advanceTorus board (Pos heading x y)
 
+-- Maps every face id (as in the illustration in the puzzle) to its four
+-- neighboring faces (right, up, left, down), and the number of left turns
+-- we need to make when we traverse the edge.
+neighbors :: Int -> ((Int, Int), (Int, Int), (Int, Int), (Int, Int))
+neighbors fid = case fid of
+  1 -> ((6, 2), (2, 2), (3, 1), (4, 0))
+  2 -> ((3, 0), (1, 2), (6, 3), (5, 2))
+  3 -> ((4, 0), (1, 3), (2, 0), (5, 1))
+  4 -> ((6, 3), (1, 0), (3, 0), (5, 0))
+  5 -> ((6, 0), (4, 0), (3, 3), (2, 2))
+  6 -> ((1, 2), (4, 1), (5, 0), (2, 1))
+  _ -> error "Invalid face id."
+
+faceId :: Int -> Int -> Int
+faceId fx fy = case (fx, fy) of
+  (2, 0) -> 1
+  (0, 1) -> 2
+  (1, 1) -> 3
+  (2, 1) -> 4
+  (2, 2) -> 5
+  (3, 2) -> 6
+  _ -> error "Invalid face coordinate, should be on the map."
+
+-- Inverse of faceId
+facePos :: Int -> (Int, Int)
+facePos = \case
+  1 -> (2, 0)
+  2 -> (0, 1)
+  3 -> (1, 1)
+  4 -> (2, 1)
+  5 -> (2, 2)
+  6 -> (3, 2)
+  _ -> error "Invalid face id."
+
+-- Move one step forward while wrapping around the cube if needed. This is a
+-- huge mess. Probably there exists an elegant coordinate system that makes this
+-- less messy, but I have not discovered it yet.
+advanceCube :: Board -> Pos -> Pos
+advanceCube board@(Board w h cells) (Pos heading cx cy) =
+  let
+    faceSize = w `div` 4
+    (fx, fy) = (cx `div` faceSize, cy `div` faceSize)
+    (px, py) = (cx `mod` faceSize, cy `mod` faceSize)
+    face = faceId fx fy
+    (right, up, left, down) = neighbors face
+    rotateLeft (h, x, y) = (turnLeft h, faceSize - 1 - y, y)
+    rotateLeftN 0 (h, x, y) = (h, x, y)
+    rotateLeftN n (h, x, y) = rotateLeftN (n - 1) (rotateLeft (h, x, y))
+    (x, y) = case heading of
+      Right -> (px + 1, py)
+      Down  -> (px, py + 1)
+      Left  -> (px - 1, py)
+      Up    -> (px, py - 1)
+    moveTo (fid, nLeft) coord = (fid, rotateLeftN nLeft coord)
+    (newFace, (heading', px', py')) = case () of
+      _ | x >= faceSize -> moveTo right (heading, x - faceSize, y)
+        | x <  0        -> moveTo left  (heading, x + faceSize, y)
+        | y >= faceSize -> moveTo down  (heading, x, y - faceSize)
+        | y <  0        -> moveTo up    (heading, x, y + faceSize)
+        | otherwise     -> (face, (heading, x, y))
+    (fx', fy') = facePos newFace
+    (cx', cy') = ((fx' * faceSize) + px', (fy' * faceSize) + py')
+  in
+    Pos heading' cx' cy'
+
 move :: Board -> (Board -> Pos -> Pos) -> Move -> Pos -> Pos
 move board advance m pos@(Pos heading x y) = case m of
   TurnLeft  -> Pos (turnLeft heading) x y
@@ -135,12 +200,12 @@ password (Pos heading x y) =
 
 main :: IO ()
 main = do
-  fileContents <- readFile "input.txt"
+  fileContents <- readFile "example.txt"
   let
     (board, moves) = parseInput fileContents
     initialPos = initialPosition board
     finalPos1 = foldl' (flip $ move board advanceTorus) initialPos moves
-    finalPos2 = foldl' (flip $ move board (error "TODO")) initialPos moves
+    finalPos2 = foldl' (flip $ move board advanceCube) initialPos moves
   putStrLn $ show initialPos
   putStrLn $ "Part 1 answer: " <> (show $ password finalPos1)
   putStrLn $ "Part 2 answer: " <> (show $ password finalPos2)
