@@ -125,7 +125,7 @@ faceId fx fy = case (fx, fy) of
   (2, 1) -> 4
   (2, 2) -> 5
   (3, 2) -> 6
-  _ -> error "Invalid face coordinate, should be on the map."
+  _ -> error $ "Invalid face coordinate " <> (show (fx, fy)) <> ", should be on the map."
 
 -- Inverse of faceId
 facePos :: Int -> (Int, Int)
@@ -144,12 +144,12 @@ facePos = \case
 advanceCube :: Board -> Pos -> Pos
 advanceCube board@(Board w h cells) (Pos heading cx cy) =
   let
-    faceSize = w `div` 4
+    faceSize = h `div` 3
     (fx, fy) = (cx `div` faceSize, cy `div` faceSize)
     (px, py) = (cx `mod` faceSize, cy `mod` faceSize)
     face = faceId fx fy
     (right, up, left, down) = neighbors face
-    rotateLeft (h, x, y) = (turnLeft h, faceSize - 1 - y, y)
+    rotateLeft (h, x, y) = (turnLeft h, faceSize - 1 - y, x)
     rotateLeftN 0 (h, x, y) = (h, x, y)
     rotateLeftN n (h, x, y) = rotateLeftN (n - 1) (rotateLeft (h, x, y))
     (x, y) = case heading of
@@ -206,6 +206,9 @@ main = do
     initialPos = initialPosition board
     finalPos1 = foldl' (flip $ move board advanceTorus) initialPos moves
     finalPos2 = foldl' (flip $ move board advanceCube) initialPos moves
-  putStrLn $ show initialPos
+  putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Right 11 0)
+  putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Up 11 0)
+  putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Left 8 0)
+  putStrLn $ show $ move board advanceCube (Ahead 1) (Pos Down 8 3)
   putStrLn $ "Part 1 answer: " <> (show $ password finalPos1)
   putStrLn $ "Part 2 answer: " <> (show $ password finalPos2)
