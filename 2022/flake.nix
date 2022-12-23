@@ -17,6 +17,7 @@
             pkgs.go
             pkgs.python3
             pkgs.rustc
+            pkgs.ponyc
             unison.packages.${system}.ucm
           ];
         };
