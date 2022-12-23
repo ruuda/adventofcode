@@ -44,19 +44,33 @@ class Elf
       // If we cannot find a new place to move to, we will stay here.
       next_pos = pos
 
-      for dir in next_dir.values() do
-        let forward = pos.add(dir)
-        let left = Coord(-dir.y, dir.x).add(forward)
-        let right = Coord(dir.y, -dir.x).add(forward)
-        let target_is_occupied = (
-          false
-          or board.contains(forward)
-          or board.contains(left)
-          or board.contains(right)
-        )
-        if not target_is_occupied then
-          next_pos = forward
-          break
+      // If all adjacent cells are unoccupied, the elf does not move.
+      var any_adjacent_occupied = false
+      for dy in Range[I32](-1, 2) do
+        for dx in Range[I32](-1, 2) do
+          let adjacent = pos.add(Coord(dx, dy))
+          if board.contains(adjacent) and (adjacent != pos) then
+            any_adjacent_occupied = true
+            break
+          end
+        end
+      end
+
+      if any_adjacent_occupied then
+        for dir in next_dir.values() do
+          let forward = pos.add(dir)
+          let left = Coord(-dir.y, dir.x).add(forward)
+          let right = Coord(dir.y, -dir.x).add(forward)
+          let target_is_occupied = (
+            false
+            or board.contains(forward)
+            or board.contains(left)
+            or board.contains(right)
+          )
+          if not target_is_occupied then
+            next_pos = forward
+            break
+          end
         end
       end
 
@@ -137,6 +151,11 @@ actor Main
       (Coord(0, 0), Coord(0, 0))
     end
 
+  fun num_empty_ground_tiles(): USize =>
+    (let min, let max) = bounds()
+    (let w, let h) = (1 + (max.x - min.x), 1 + (max.y - min.y))
+    (w * h).usize() - elves.size()
+
   fun print_board() =>
     (let min, let max) = bounds()
     let board = get_board()
@@ -157,7 +176,7 @@ actor Main
     let caps = recover val FileCaps.>set(FileRead).>set(FileStat) end
 
     try
-      let path = FilePath(FileAuth(env.root), "example2.txt", caps)
+      let path = FilePath(FileAuth(env.root), "input.txt", caps)
       let open_result = OpenFile(path)
       let file = open_result as File
 
@@ -176,9 +195,11 @@ actor Main
       env.out.print("Elf at " + elf.pos.string())
     end
     print_board()
-    step_phase1()
-    step_phase2()
-    print_board()
-    step_phase1()
-    step_phase2()
-    print_board()
+
+    for i in Range(0, 10) do
+      env.out.print("\n== End of Round " + (i + 1).string() + " ==")
+      step_phase1()
+      step_phase2()
+      print_board()
+    end
+    env.out.print("Empty ground tiles: " + num_empty_ground_tiles().string())
