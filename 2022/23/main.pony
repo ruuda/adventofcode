@@ -40,7 +40,7 @@ class Elf
     next_dir = [Coord(0, 1); Coord(0, -1); Coord(-1, 0); Coord(1, 0)]
     next_pos = Coord(x, y)
 
-  fun ref propose_next(board: Set[Coord]): Coord =>
+  fun ref propose_next(board: Set[Coord]) =>
       // If we cannot find a new place to move to, we will stay here.
       next_pos = pos
 
@@ -67,8 +67,17 @@ class Elf
         next_dir.push(dir)
       end
 
-      next_pos
-
+  fun ref move_next(proposals: Map[Coord, U32]) =>
+    // See how many elves wanted to move to the same position as we did. If it's
+    // only one, then that was us, and we can move there. Note, the position
+    // must exist in `proposals`, but as far as I am aware Pony has no concept
+    // of panic, so we have to pick a value.
+    let demand = try proposals(next_pos)? else 0 end
+    if demand == 1 then
+      pos = next_pos
+    else
+      next_pos = pos
+    end
 
 actor Main
   var elves: Array[Elf]
@@ -103,13 +112,13 @@ actor Main
       elf.propose_next(board)
     end
 
-  fun step_phase2() =>
+  fun ref step_phase2() =>
     """
     Move the elves to where they want to go if possible.
     """
     let next_board = get_next_board()
     for elf in elves.values() do
-      env.out.print("Elf wants to move to: " + elf.next_pos.string())
+      elf.move_next(next_board)
     end
 
   fun bounds(): (Coord, Coord) =>
@@ -166,4 +175,10 @@ actor Main
     for elf in elves.values() do
       env.out.print("Elf at " + elf.pos.string())
     end
+    print_board()
+    step_phase1()
+    step_phase2()
+    print_board()
+    step_phase1()
+    step_phase2()
     print_board()
