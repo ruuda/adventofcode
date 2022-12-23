@@ -33,16 +33,19 @@ class Elf
   var pos: Coord
   var next_dir: Array[Coord]
   var next_pos: Coord
+  var did_move: Bool
 
   new create(x: I32, y: I32) =>
     pos = Coord(x, y)
     // Elves start out wanting to go north, south, west, east.
     next_dir = [Coord(0, 1); Coord(0, -1); Coord(-1, 0); Coord(1, 0)]
     next_pos = Coord(x, y)
+    did_move = true
 
   fun ref propose_next(board: Set[Coord]) =>
       // If we cannot find a new place to move to, we will stay here.
       next_pos = pos
+      did_move = false
 
       // If all adjacent cells are unoccupied, the elf does not move.
       var any_adjacent_occupied = false
@@ -88,6 +91,7 @@ class Elf
     // of panic, so we have to pick a value.
     let demand = try proposals(next_pos)? else 0 end
     if demand == 1 then
+      did_move = (pos != next_pos)
       pos = next_pos
     else
       next_pos = pos
@@ -134,6 +138,9 @@ actor Main
     for elf in elves.values() do
       elf.move_next(next_board)
     end
+
+  fun num_moved(): USize =>
+    Iter[Elf box](elves.values()).filter({(elf) => elf.did_move}).count()
 
   fun bounds(): (Coord, Coord) =>
     """
@@ -196,10 +203,17 @@ actor Main
     end
     print_board()
 
-    for i in Range(0, 10) do
-      env.out.print("\n== End of Round " + (i + 1).string() + " ==")
+    for i in Range(1, 10000) do
       step_phase1()
       step_phase2()
-      print_board()
+      let n_moved = num_moved()
+      env.out.print("Round " + i.string() + ", num_moved=" + n_moved.string())
+      if i == 10 then
+        print_board()
+        env.out.print("Empty ground tiles: " + num_empty_ground_tiles().string())
+      end
+      if n_moved == 0 then
+        env.out.print("First round without movement: " + i.string())
+        break
+      end
     end
-    env.out.print("Empty ground tiles: " + num_empty_ground_tiles().string())
