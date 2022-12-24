@@ -28,6 +28,12 @@ class Coord
   fun string(): String =>
     "(" + x.string() + ", " + y.string() + ")"
 
+  fun manhattan(that: Coord box): I32 =>
+    """
+    Return the distance between this and that using the Manhattan metric.
+    """
+    ((x - that.x).abs() + (y - that.y).abs()).i32()
+
 
 class Blizzard
   var pos: Coord
@@ -55,16 +61,32 @@ class State
   // The current time. Equal to number of steps (including in-place) taken.
   let minute: I32
 
+  // The minimum number of minutes that it would take to reach the exit.
+  let min_distance: I32
+
   // Position of the player.
   let pos: Coord
 
-  new create(minute': I32, pos': Coord) =>
+  new create(minute': I32, min_distance': I32, pos': Coord) =>
     minute = minute'
+    min_distance = min_distance'
     pos = pos'
 
   fun compare(that: State box): (Less | Equal | Greater) =>
-    if minute < that.minute then return Less end
-    if minute > that.minute then return Greater end
+    // We order states by the minimum time to reach the exit from there.
+    let n = minute + min_distance
+    let m = that.minute + that.min_distance
+
+    if n < m then return Less end
+    if n > m then return Greater end
+
+    // Then break ties by preferring states closer to the exit.
+    if min_distance < that.min_distance then return Less end
+    if min_distance > that.min_distance then return Greater end
+
+    // Then break ties by preferring states later in time.
+    if minute > that.minute then return Less end
+    if minute < that.minute then return Greater end
 
     if pos.y > that.pos.y then return Less end
     if pos.y < that.pos.y then return Greater end
@@ -109,6 +131,7 @@ actor Main
   // Dimensions of the board, excluding the walls.
   let width: I32
   let height: I32
+  let exit_pos: Coord
 
   fun mark_blizzards(): Set[Coord] =>
     var closed = Set[Coord]()
@@ -139,7 +162,6 @@ actor Main
     Inspect the next state. If we can reach the exit from there, return the
     number of minutes it took. If we can't, return error.
     """
-    let exit_pos = Coord(width - 1, height)
     let state = try open.pop()? else return -1 end
 
     // We now know a way to reach `state.pos` in minute `state.minute`, no need
@@ -169,7 +191,7 @@ actor Main
         if is_out_of_bounds then continue end
 
         if not closed.contains(next_pos) then
-          open.push(State(m, next_pos))
+          open.push(State(m, exit_pos.manhattan(next_pos), next_pos))
         end
       end
     end
@@ -209,9 +231,11 @@ actor Main
 
     width = w
     height = h
+    exit_pos = Coord(width - 1, height)
 
     // We start out one position outside of the board, in the top-left.
-    let initial_state = State(0, Coord(0, -1))
+    let start_pos = Coord(0, -1)
+    let initial_state = State(0, exit_pos.manhattan(start_pos), start_pos)
     open = MinHeap[State](0)
     open.push(initial_state)
 
