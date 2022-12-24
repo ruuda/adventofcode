@@ -16,10 +16,12 @@
             pkgs.ghc
             pkgs.go
             pkgs.python3
+            pkgs.racket
             pkgs.rustc
             pkgs.ponyc
             unison.packages.${system}.ucm
           ];
+          LOCALE_ARCHIVE = "${pkgs.glibcLocales}/lib/locale/locale-archive";
         };
       };
 }

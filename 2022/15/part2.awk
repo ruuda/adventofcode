@@ -21,7 +21,7 @@ function abs(x) {
 {
   # We want to split on all of these.
   gsub(/[=,:]/, " ", $0)
-  # Sensor posision
+  # Sensor position
   sx = $4
   sy = $6
   # Beacon position
@@ -50,7 +50,6 @@ END {
           # advance x, we don't need to continue to scan pointlessly.
           tdist = abs(sy - y)
           rt = r - tdist
-          # Subtract one, because the x++ will still execute.
           if (sx + rt > x) {
             x = sx + rt
           }
