@@ -1,6 +1,7 @@
-use "files"
 use "collections"
+use "files"
 use "itertools"
+use "time"
 
 class Coord
   let x: I32
@@ -72,24 +73,28 @@ class State
     min_distance = min_distance'
     pos = pos'
 
+  fun min_minute(): I32 =>
+    """
+    Return the minimal time at which we can reach the exit from this state.
+    Lower is better.
+    """
+    minute + min_distance
+
   fun compare(that: State box): (Less | Equal | Greater) =>
     // We order states by the minimum time to reach the exit from there.
-    let n = minute + min_distance
-    let m = that.minute + that.min_distance
-
-    if n < m then return Less end
-    if n > m then return Greater end
-
-    // Then break ties by preferring states closer to the exit.
-    if min_distance < that.min_distance then return Less end
-    if min_distance > that.min_distance then return Greater end
+    if min_minute() < that.min_minute() then return Less end
+    if min_minute() > that.min_minute() then return Greater end
 
     // Then break ties by preferring states later in time.
     if minute > that.minute then return Less end
     if minute < that.minute then return Greater end
 
-    if pos.y > that.pos.y then return Less end
-    if pos.y < that.pos.y then return Greater end
+    // Then break ties by preferring states closer to the exit.
+    if min_distance < that.min_distance then return Less end
+    if min_distance > that.min_distance then return Greater end
+
+    if pos.y < that.pos.y then return Less end
+    if pos.y > that.pos.y then return Greater end
 
     if pos.x > that.pos.x then return Less end
     if pos.x < that.pos.x then return Greater end
@@ -115,7 +120,10 @@ class State
     (compare(that) == Greater) or (compare(that) == Equal)
 
 
-actor Main
+primitive StartToEnd
+primitive EndToStart
+
+actor Simulator
   let env: Env
 
   let blizzards: Array[Blizzard]
@@ -133,6 +141,8 @@ actor Main
   let height: I32
   var exit_pos: Coord
 
+  var phase: I32
+
   fun mark_blizzards(): Set[Coord] =>
     var closed = Set[Coord]()
     for blizzard in blizzards.values() do
@@ -148,7 +158,6 @@ actor Main
 
   fun ref ensure_closed_at(minute: I32): Set[Coord] ref =>
     while closed_at.size().i32() <= minute do
-      env.out.print("Advanced blizzards to minute " + minute.string() + ".")
       step_blizzards()
     end
     try
@@ -158,14 +167,17 @@ actor Main
       Set[Coord]()
     end
 
-  fun ref inspect_one(): I32? =>
+  be inspect_one(i: I32) =>
     """
     Inspect the next state. If we can reach the exit from there, return the
     number of minutes it took. If we can't, return error.
     """
-    let state = try open.pop()? else return -1 end
-
-    env.out.print(" state pos=" + state.pos.string() + " min_dist=" + state.min_distance.string())
+    let state = try
+      open.pop()?
+    else
+      env.out.print("Error: work queue underrun.")
+      return
+    end
 
     // We now know a way to reach `state.pos` in minute `state.minute`, no need
     // to revisit that.
@@ -181,11 +193,29 @@ actor Main
         if (dx.abs() + dy.abs()) > 1 then continue end
 
         let next_pos = state.pos.add(Coord(dx, dy))
-        env.out.write("   consider " + next_pos.string())
 
         if next_pos == exit_pos then
-          env.out.print(" is exit")
-          return m
+          env.out.print("Minimal minute " + m.string())
+          // TODO: Send result to main actor.
+
+          // The previous set of closed nodes, and the remaining open nodes, are
+          // no longer interesting. We can free up the memory after this
+          // behavior exits.  It is important that we free them before
+          // returning, and not at the start of the behavior, because GC only
+          // runs int between behaviors.
+          open.clear()
+          for old_closed in closed_at.values() do
+            old_closed.clear()
+          end
+
+          // If we have more to compute, schedule the continuation.
+          phase = phase + 1
+          match phase
+            | 1 => navigate(EndToStart)
+            | 2 => navigate(StartToEnd)
+          end
+
+          return
         end
 
         let is_out_of_bounds = (
@@ -196,43 +226,49 @@ actor Main
           or (next_pos.y >= height)
         )
         if is_out_of_bounds and (next_pos != state.pos) then
-          env.out.print(" is oob")
           continue
         end
 
         if not closed.contains(next_pos) then
-          env.out.print(" -> pushed")
           open.push(State(m, exit_pos.manhattan(next_pos), next_pos))
-        else
-          env.out.print(" is closed")
         end
       end
     end
 
-    // If we did not return, then we did not find the exit.
-    error
+    // If we get here, then we did not find the exit. Print a status update once
+    // in a while.
+    if (i % 10000) == 0 then
+      try
+        let best = open.peek()?
+        env.out.print(
+          " i=" + i.string() +
+          " max_explored_minute=" + (closed_at.size() - 1).string() +
+          " open=" + open.size().string() +
+          " minute=" + best.minute.string() +
+          " min_distance=" + best.min_distance.string() +
+          " min_solve_minute=" + (best.minute + best.min_distance).string()
+        )
+      end
+    end
 
-  fun ref navigate_from_to(start_pos: Coord, end_pos: Coord) =>
+    inspect_one(i + 1)
+
+  be navigate(dir: (StartToEnd | EndToStart)) =>
     """
-    Return the minimum number of minutes to go from the start pos to the end
-    pos. Time continues to advance when called multiple times.
+    Compute the minimum minute where we reach the target.
+    Time continues to advance when called multiple times.
     """
+    (let start_pos, let end_pos) = match dir
+      | StartToEnd => (Coord(0, -1), Coord(width - 1, height))
+      | EndToStart => (Coord(width - 1, height), Coord(0, -1))
+    end
+
     let start_minute = closed_at.size().i32() - 1
-    exit_pos = end_pos
+    exit_pos = end_pos.clone()
 
     // We start out one position outside of the board, in the top-left.
-    let initial_state = State(start_minute, exit_pos.manhattan(start_pos), start_pos)
-    open.clear()
+    let initial_state = State(start_minute, exit_pos.manhattan(start_pos), start_pos.clone())
     open.push(initial_state)
-
-    // If the closed nodes are already there, there might be pollution from a
-    // previous exploration, recompute them for the next timestep to have only
-    // the blizzards as closed nodes, not visited places.
-    // try
-    //   closed_at.pop()?
-    //   closed_at.push(mark_blizzards())
-    //   env.out.print("Refreshed closed_at for minute " + (closed_at.size() - 1).string())
-    // end
 
     env.out.print(
       "Starting search from " + start_pos.string() +
@@ -241,26 +277,7 @@ actor Main
       " with " + open.size().string() + " open nodes."
     )
 
-    var i: I32 = 0
-    while true do
-      try
-        let n = inspect_one()?
-        env.out.print(
-          "Minimal minute to go from " + start_pos.string() +
-          " to " + end_pos.string() + ": " + n.string()
-        )
-        break
-      else
-        if (i % 10000) == 0 then
-          env.out.print(
-            " i=" + i.string() +
-            " max_minute=" + (closed_at.size() - 1).string() +
-            " open=" + open.size().string()
-          )
-        end
-        i = i + 1
-      end
-    end
+    inspect_one(0)
 
   new create(env': Env) =>
     env = env'
@@ -273,7 +290,7 @@ actor Main
 
     try
       let caps = recover val FileCaps.>set(FileRead).>set(FileStat) end
-      let path = FilePath(FileAuth(env.root), "example.txt", caps)
+      let path = FilePath(FileAuth(env.root), "input.txt", caps)
       let open_result = OpenFile(path)
       let file = open_result as File
 
@@ -295,13 +312,19 @@ actor Main
 
     width = w
     height = h
-    let start_pos = Coord(0, -1)
-    let end_pos = Coord(width - 1, height)
-    exit_pos = end_pos
+    exit_pos = Coord(0, 0)
+    phase = 0
 
     // Mark the blizzard positions at minute 0.
     closed_at.push(mark_blizzards())
 
-    navigate_from_to(start_pos, end_pos)
-    navigate_from_to(end_pos, start_pos)
-    navigate_from_to(start_pos, end_pos)
+
+actor Main
+  new create(env: Env) =>
+    let simulator: Simulator = Simulator(env)
+
+    // Pony does not run GC at arbitrary times. Therefore, we need to break up
+    // our long-running computation into behaviors, to allow the GC to run in
+    // between. Kick off the initial phase now. It will schedule its own
+    // continueation.
+    simulator.navigate(StartToEnd)
