@@ -151,11 +151,22 @@ actor Main
 
     for dy in Range[I32](-1, 2) do
       for dx in Range[I32](-1, 2) do
+        // We can only step horizontally or vertically (or not at all),
+        // not diagonally.
+        if (dx.abs() + dy.abs()) > 1 then continue end
+
         let next_pos = state.pos.add(Coord(dx, dy))
 
-        if next_pos == exit_pos then
-          return m
-        end
+        if next_pos == exit_pos then return m end
+
+        let is_out_of_bounds = (
+          false
+          or (next_pos.x < 0)
+          or (next_pos.x >= width)
+          or (next_pos.y < 0)
+          or (next_pos.y >= height)
+        )
+        if is_out_of_bounds then continue end
 
         if not closed.contains(next_pos) then
           open.push(State(m, next_pos))
@@ -176,7 +187,7 @@ actor Main
 
     try
       let caps = recover val FileCaps.>set(FileRead).>set(FileStat) end
-      let path = FilePath(FileAuth(env.root), "example.txt", caps)
+      let path = FilePath(FileAuth(env.root), "input.txt", caps)
       let open_result = OpenFile(path)
       let file = open_result as File
 
@@ -214,7 +225,7 @@ actor Main
         env.out.print("Minimal minutes to reach exit: " + n.string())
         break
       else
-        if (i % 100) == 0 then
+        if (i % 10000) == 0 then
           env.out.print(
             " i=" + i.string() +
             " max_minute=" + (closed_at.size() - 1).string() +
@@ -224,4 +235,3 @@ actor Main
         i = i + 1
       end
     end
-
