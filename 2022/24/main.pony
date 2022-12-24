@@ -75,8 +75,9 @@ class State
 
   fun min_minute(): F32 =>
     """
-    Return the minimal time at which we can reach the exit from this state.
-    Lower is better.
+    Return a heuristic of when we can reach the exit. At first I used the
+    minimal minute at which we could reach the exit from this state, but
+    Euclidean distance works slightly better.
     """
     minute.f32() + min_distance
 
@@ -137,8 +138,6 @@ actor Simulator
   let height: I32
   var exit_pos: Coord
 
-  var phase: I32
-
   fun mark_blizzards(): Set[Coord] =>
     var closed = Set[Coord]()
     for blizzard in blizzards.values() do
@@ -163,7 +162,7 @@ actor Simulator
       Set[Coord]()
     end
 
-  be inspect_one(i: I32) =>
+  fun ref inspect_one(): I32? =>
     """
     Inspect the next state. If we can reach the exit from there, return the
     number of minutes it took. If we can't, return error.
@@ -172,16 +171,15 @@ actor Simulator
       open.pop()?
     else
       env.out.print("Error: work queue underrun.")
-      return
+      error
     end
 
     let closed_current = ensure_closed_at(state.minute)
     if closed_current.contains(state.pos) then
-      inspect_one(i + 1)
-      return
+      error
     else
-      // We now know a way to reach `state.pos` in minute `state.minute`, no need
-      // to revisit that.
+      // We now know a way to reach `state.pos` in minute `state.minute`, no
+      // need to revisit that.
       ensure_closed_at(state.minute).set(state.pos)
     end
 
@@ -197,25 +195,7 @@ actor Simulator
         let next_pos = state.pos.add(Coord(dx, dy))
 
         if next_pos == exit_pos then
-          env.out.print("Minimal minute " + m.string())
-          // The previous set of closed nodes, and the remaining open nodes, are
-          // no longer interesting. We can free up the memory after this
-          // behavior exits.  It is important that we free them before
-          // returning, and not at the start of the behavior, because GC only
-          // runs int between behaviors.
-          open.clear()
-          for old_closed in closed_at.values() do
-            old_closed.clear()
-          end
-
-          // If we have more to compute, schedule the continuation.
-          phase = phase + 1
-          match phase
-            | 1 => navigate(EndToStart)
-            | 2 => navigate(StartToEnd)
-          end
-
-          return
+          return m
         end
 
         let is_out_of_bounds = (
@@ -230,6 +210,11 @@ actor Simulator
         end
 
         if not closed.contains(next_pos) then
+          // We compute the minimum Euclidean distance, in space-time, to the
+          // exit. The Manhattan distance in space is also the minimum number of
+          // timesteps we need to reach the exit. Using this distance heuristic
+          // works better than only the Manhattan distance to the exit; it finds
+          // the destination in fewer iterations.
           let dt = exit_pos.manhattan(next_pos)
           let dsx = next_pos.x - exit_pos.x
           let dsy = next_pos.y - exit_pos.y
@@ -237,30 +222,14 @@ actor Simulator
           d2 = d2 + (dsx * dsx).f32()
           d2 = d2 + (dsy * dsy).f32()
           d2 = d2 + (dt * dt).f32()
-          // I do not understand why, but if I round to i32, exploration is
-          // *much* faster.
           open.push(State(m, d2.sqrt(), next_pos))
         end
       end
     end
 
-    // If we get here, then we did not find the exit. Print a status update once
-    // in a while.
-    if (i % 10000) == 0 then
-      try
-        let best = open.peek()?
-        env.out.print(
-          " i=" + i.string() +
-          " max_explored_minute=" + (closed_at.size() - 1).string() +
-          " open=" + open.size().string() +
-          " minute=" + best.minute.string() +
-          " min_distance=" + best.min_distance.string() +
-          " min_solve_minute=" + (best.minute.f32() + best.min_distance).string()
-        )
-      end
-    end
+    // If we get here, we did not find the exit.
+    error
 
-    inspect_one(i + 1)
 
   be navigate(dir: (StartToEnd | EndToStart)) =>
     """
@@ -290,7 +259,39 @@ actor Simulator
       " with " + open.size().string() + " open nodes."
     )
 
-    inspect_one(0)
+    var i: I32 = 0
+
+    while true do
+      try
+        let n = inspect_one()?
+        env.out.print("Earliest minute to reach " + end_pos.string() + ": " + n.string())
+        break
+      else
+        if (i % 10000) == 0 then
+          try
+            let best = open.peek()?
+            env.out.print(
+              " i=" + i.string() +
+              " max_explored_minute=" + (closed_at.size() - 1).string() +
+              " open=" + open.size().string() +
+              " minute=" + best.minute.string() +
+              " min_distance=" + best.min_distance.string() +
+              " min_solve_minute=" + (best.minute.f32() + best.min_distance).string()
+            )
+          end
+        end
+      end
+      i = i + 1
+    end
+
+    // The previous set of closed nodes, and the remaining open nodes, are
+    // no longer interesting. We can free up the memory after this behavior
+    // exits. It is important that we free them before returning, and not at
+    // the start of the behavior, because GC only runs int between behaviors.
+    open.clear()
+    for old_closed in closed_at.values() do
+      old_closed.clear()
+    end
 
   new create(env': Env) =>
     env = env'
@@ -326,7 +327,6 @@ actor Simulator
     width = w
     height = h
     exit_pos = Coord(0, 0)
-    phase = 0
 
     // Mark the blizzard positions at minute 0.
     closed_at.push(mark_blizzards())
@@ -338,6 +338,7 @@ actor Main
 
     // Pony does not run GC at arbitrary times. Therefore, we need to break up
     // our long-running computation into behaviors, to allow the GC to run in
-    // between. Kick off the initial phase now. It will schedule its own
-    // continueation.
+    // between. We schedule three behaviors to run.
+    simulator.navigate(StartToEnd)
+    simulator.navigate(EndToStart)
     simulator.navigate(StartToEnd)
