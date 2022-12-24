@@ -131,7 +131,7 @@ actor Main
   // Dimensions of the board, excluding the walls.
   let width: I32
   let height: I32
-  let exit_pos: Coord
+  var exit_pos: Coord
 
   fun mark_blizzards(): Set[Coord] =>
     var closed = Set[Coord]()
@@ -148,6 +148,7 @@ actor Main
 
   fun ref ensure_closed_at(minute: I32): Set[Coord] ref =>
     while closed_at.size().i32() <= minute do
+      env.out.print("Advanced blizzards to minute " + minute.string() + ".")
       step_blizzards()
     end
     try
@@ -164,6 +165,8 @@ actor Main
     """
     let state = try open.pop()? else return -1 end
 
+    env.out.print(" state pos=" + state.pos.string() + " min_dist=" + state.min_distance.string())
+
     // We now know a way to reach `state.pos` in minute `state.minute`, no need
     // to revisit that.
     ensure_closed_at(state.minute).set(state.pos)
@@ -178,8 +181,12 @@ actor Main
         if (dx.abs() + dy.abs()) > 1 then continue end
 
         let next_pos = state.pos.add(Coord(dx, dy))
+        env.out.write("   consider " + next_pos.string())
 
-        if next_pos == exit_pos then return m end
+        if next_pos == exit_pos then
+          env.out.print(" is exit")
+          return m
+        end
 
         let is_out_of_bounds = (
           false
@@ -188,10 +195,16 @@ actor Main
           or (next_pos.y < 0)
           or (next_pos.y >= height)
         )
-        if is_out_of_bounds then continue end
+        if is_out_of_bounds and (next_pos != state.pos) then
+          env.out.print(" is oob")
+          continue
+        end
 
         if not closed.contains(next_pos) then
+          env.out.print(" -> pushed")
           open.push(State(m, exit_pos.manhattan(next_pos), next_pos))
+        else
+          env.out.print(" is closed")
         end
       end
     end
@@ -199,17 +212,68 @@ actor Main
     // If we did not return, then we did not find the exit.
     error
 
+  fun ref navigate_from_to(start_pos: Coord, end_pos: Coord) =>
+    """
+    Return the minimum number of minutes to go from the start pos to the end
+    pos. Time continues to advance when called multiple times.
+    """
+    let start_minute = closed_at.size().i32() - 1
+    exit_pos = end_pos
+
+    // We start out one position outside of the board, in the top-left.
+    let initial_state = State(start_minute, exit_pos.manhattan(start_pos), start_pos)
+    open.clear()
+    open.push(initial_state)
+
+    // If the closed nodes are already there, there might be pollution from a
+    // previous exploration, recompute them for the next timestep to have only
+    // the blizzards as closed nodes, not visited places.
+    // try
+    //   closed_at.pop()?
+    //   closed_at.push(mark_blizzards())
+    //   env.out.print("Refreshed closed_at for minute " + (closed_at.size() - 1).string())
+    // end
+
+    env.out.print(
+      "Starting search from " + start_pos.string() +
+      " to " + end_pos.string() +
+      " at minute " + start_minute.string() +
+      " with " + open.size().string() + " open nodes."
+    )
+
+    var i: I32 = 0
+    while true do
+      try
+        let n = inspect_one()?
+        env.out.print(
+          "Minimal minute to go from " + start_pos.string() +
+          " to " + end_pos.string() + ": " + n.string()
+        )
+        break
+      else
+        if (i % 10000) == 0 then
+          env.out.print(
+            " i=" + i.string() +
+            " max_minute=" + (closed_at.size() - 1).string() +
+            " open=" + open.size().string()
+          )
+        end
+        i = i + 1
+      end
+    end
+
   new create(env': Env) =>
     env = env'
     blizzards = []
     closed_at = []
+    open = MinHeap[State](0)
 
     var h: I32 = 0
     var w: I32 = 0
 
     try
       let caps = recover val FileCaps.>set(FileRead).>set(FileStat) end
-      let path = FilePath(FileAuth(env.root), "input.txt", caps)
+      let path = FilePath(FileAuth(env.root), "example.txt", caps)
       let open_result = OpenFile(path)
       let file = open_result as File
 
@@ -231,31 +295,13 @@ actor Main
 
     width = w
     height = h
-    exit_pos = Coord(width - 1, height)
-
-    // We start out one position outside of the board, in the top-left.
     let start_pos = Coord(0, -1)
-    let initial_state = State(0, exit_pos.manhattan(start_pos), start_pos)
-    open = MinHeap[State](0)
-    open.push(initial_state)
+    let end_pos = Coord(width - 1, height)
+    exit_pos = end_pos
 
     // Mark the blizzard positions at minute 0.
     closed_at.push(mark_blizzards())
 
-    var i: I32 = 0
-    while true do
-      try
-        let n = inspect_one()?
-        env.out.print("Minimal minutes to reach exit: " + n.string())
-        break
-      else
-        if (i % 10000) == 0 then
-          env.out.print(
-            " i=" + i.string() +
-            " max_minute=" + (closed_at.size() - 1).string() +
-            " open=" + open.size().string()
-          )
-        end
-        i = i + 1
-      end
-    end
+    navigate_from_to(start_pos, end_pos)
+    navigate_from_to(end_pos, start_pos)
+    navigate_from_to(start_pos, end_pos)
