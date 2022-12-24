@@ -175,9 +175,15 @@ actor Simulator
       return
     end
 
-    // We now know a way to reach `state.pos` in minute `state.minute`, no need
-    // to revisit that.
-    ensure_closed_at(state.minute).set(state.pos)
+    let closed_current = ensure_closed_at(state.minute)
+    if closed_current.contains(state.pos) then
+      inspect_one(i + 1)
+      return
+    else
+      // We now know a way to reach `state.pos` in minute `state.minute`, no need
+      // to revisit that.
+      ensure_closed_at(state.minute).set(state.pos)
+    end
 
     let m = state.minute + 1
     let closed: Set[Coord] ref = ensure_closed_at(m)
@@ -233,7 +239,7 @@ actor Simulator
           d2 = d2 + (dt * dt).f32()
           // I do not understand why, but if I round to i32, exploration is
           // *much* faster.
-          open.push(State(m, d2.sqrt().i32().f32(), next_pos))
+          open.push(State(m, d2.sqrt(), next_pos))
         end
       end
     end
