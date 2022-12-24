@@ -62,34 +62,30 @@ class State
   // The current time. Equal to number of steps (including in-place) taken.
   let minute: I32
 
-  // The minimum number of minutes that it would take to reach the exit.
-  let min_distance: I32
+  // The minimum space-time distance to the exit.
+  let min_distance: F32
 
   // Position of the player.
   let pos: Coord
 
-  new create(minute': I32, min_distance': I32, pos': Coord) =>
+  new create(minute': I32, min_distance': F32, pos': Coord) =>
     minute = minute'
     min_distance = min_distance'
     pos = pos'
 
-  fun min_minute(): I32 =>
+  fun min_minute(): F32 =>
     """
     Return the minimal time at which we can reach the exit from this state.
     Lower is better.
     """
-    minute + min_distance
+    minute.f32() + min_distance
 
   fun compare(that: State box): (Less | Equal | Greater) =>
-    // We order states by the minimum time to reach the exit from there.
+    // We order states by the earliest time at which we could reach the exit.
     if min_minute() < that.min_minute() then return Less end
     if min_minute() > that.min_minute() then return Greater end
 
-    // Then break ties by preferring states later in time.
-    if minute > that.minute then return Less end
-    if minute < that.minute then return Greater end
-
-    // Then break ties by preferring states closer to the exit.
+    // We order states by the minimum time to reach the exit there.
     if min_distance < that.min_distance then return Less end
     if min_distance > that.min_distance then return Greater end
 
@@ -196,8 +192,6 @@ actor Simulator
 
         if next_pos == exit_pos then
           env.out.print("Minimal minute " + m.string())
-          // TODO: Send result to main actor.
-
           // The previous set of closed nodes, and the remaining open nodes, are
           // no longer interesting. We can free up the memory after this
           // behavior exits.  It is important that we free them before
@@ -230,7 +224,16 @@ actor Simulator
         end
 
         if not closed.contains(next_pos) then
-          open.push(State(m, exit_pos.manhattan(next_pos), next_pos))
+          let dt = exit_pos.manhattan(next_pos)
+          let dsx = next_pos.x - exit_pos.x
+          let dsy = next_pos.y - exit_pos.y
+          var d2: F32 = 0.0
+          d2 = d2 + (dsx * dsx).f32()
+          d2 = d2 + (dsy * dsy).f32()
+          d2 = d2 + (dt * dt).f32()
+          // I do not understand why, but if I round to i32, exploration is
+          // *much* faster.
+          open.push(State(m, d2.sqrt().i32().f32(), next_pos))
         end
       end
     end
@@ -246,7 +249,7 @@ actor Simulator
           " open=" + open.size().string() +
           " minute=" + best.minute.string() +
           " min_distance=" + best.min_distance.string() +
-          " min_solve_minute=" + (best.minute + best.min_distance).string()
+          " min_solve_minute=" + (best.minute.f32() + best.min_distance).string()
         )
       end
     end
@@ -267,7 +270,11 @@ actor Simulator
     exit_pos = end_pos.clone()
 
     // We start out one position outside of the board, in the top-left.
-    let initial_state = State(start_minute, exit_pos.manhattan(start_pos), start_pos.clone())
+    let initial_state = State(
+      start_minute,
+      exit_pos.manhattan(start_pos).f32(),
+      start_pos.clone()
+    )
     open.push(initial_state)
 
     env.out.print(
