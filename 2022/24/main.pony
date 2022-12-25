@@ -3,7 +3,7 @@ use "files"
 use "itertools"
 use "time"
 
-class Coord
+class Coord is Equatable[Coord]
   let x: I32
   let y: I32
 
@@ -16,9 +16,6 @@ class Coord
 
   fun eq(that: Coord box): Bool =>
     (x == that.x) and (y == that.y)
-
-  fun ne(that: Coord box): Bool =>
-    (x != that.x) or (y != that.y)
 
   fun add(other: Coord): Coord =>
     Coord(x + other.x, y + other.y)
@@ -58,7 +55,7 @@ class Blizzard
     if pos.y <  0 then pos = pos.add(Coord(0,  h)) end
     if pos.y >= h then pos = pos.add(Coord(0, -h)) end
 
-class State
+class State is Comparable[State]
   // The current time. Equal to number of steps (including in-place) taken.
   let minute: I32
 
@@ -98,27 +95,13 @@ class State
 
     Equal
 
-  fun eq(that: State box): Bool =>
-    (minute == that.minute) and (pos == that.pos)
-
-  fun ne(that: State box): Bool =>
-    (minute != that.minute) or (pos != that.pos)
-
   fun lt(that: State box): Bool =>
     compare(that) == Less
-
-  fun le(that: State box): Bool =>
-    (compare(that) == Less) or (compare(that) == Equal)
-
-  fun gt(that: State box): Bool =>
-    compare(that) == Greater
-
-  fun ge(that: State box): Bool =>
-    (compare(that) == Greater) or (compare(that) == Equal)
 
 
 primitive StartToEnd
 primitive EndToStart
+
 
 actor Simulator
   let env: Env
