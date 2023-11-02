@@ -15,7 +15,9 @@ Some languages that I still want to try:
  * Clojure
  * Guile, Racket
  * Hoon
+ * Nim
  * Prolog
+ * Zig
 
 ## License
 
