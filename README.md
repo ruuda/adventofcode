@@ -14,9 +14,11 @@ Some languages that I still want to try:
 
  * Clojure
  * D
+ * F#
  * Guile, Racket
  * Hoon
  * Nim
+ * OCaml
  * Prolog
  * Zig
 
