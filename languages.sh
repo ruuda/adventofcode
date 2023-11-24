@@ -5,7 +5,7 @@
 # that language for my next solution, according to my personal rule of only
 # using new languages or languages that are in the bottom 50%.
 
-~/.cargo/bin/tokei \
+tokei \
   --exclude '{*.txt,*.md,Makefile}' \
   --compact \
   --rsort code \

@@ -1,0 +1,28 @@
+From d874543c055e8a0a38791b3f459fdbc66022b52a Mon Sep 17 00:00:00 2001
+From: Ruud van Asseldonk <dev@veniogames.com>
+Date: Fri, 24 Nov 2023 19:21:35 +0100
+Subject: [PATCH] Define RCL
+
+---
+ languages.json | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/languages.json b/languages.json
+index 1aa459c..cee04c4 100644
+--- a/languages.json
++++ b/languages.json
+@@ -1005,6 +1005,11 @@
+       "multi_line_comments": [["<!--", "-->"], ["@*", "*@"]],
+       "extensions": ["cshtml"]
+     },
++    "RCL": {
++      "line_comment": ["//"],
++      "quotes": [["\\\"", "\\\""], ["\\\"\\\"\\\"", "\\\"\\\"\\\""]],
++      "extensions": ["rcl"]
++    },
+     "Renpy": {
+       "name": "Ren'Py",
+       "line_comment": ["#"],
+-- 
+2.42.1
+
