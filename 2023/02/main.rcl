@@ -1,14 +1,38 @@
-let input = std.read_file_utf8("../adventofcode/2023/02/example.txt");
-[
+let input = std.read_file_utf8("input.txt");
+
+let is_possible = draws => [
+  for draw in draws:
+  (draw.red <= 12) and (draw.green <= 13) and (draw.blue <= 14)
+].fold(true, (x, y) => x and y);
+
+let games = [
   for line in input.split_lines():
+  // From "Game 1: ..." extract "1" (the game id) and the draws ("...").
   let game_draws = line.split(": ");
-  let game_id_str = game_draws[0].split(" ")[1];
+  let game_id = game_draws[0].split(" ")[1].parse_int();
+
+  // Parse the individual draws.
   let draws = [
-    for draw in game_draws[1].split("; "): [
+    for draw in game_draws[1].split("; "):
+    {
+      // Set defaults for every color, these will be overwritten below if the
+      // color was drawn, but not every color is drawn all the time.
+      red = 0,
+      green = 0,
+      blue = 0,
       for counts in draw.split(", "):
       let count_color = counts.split(" ");
-      { count_color[1]: count_color[0] }
-    ]
+      count_color[1]: count_color[0].parse_int()
+    }
   ];
-  { id = game_id_str, draws = draws }
-]
+
+  { id = game_id, draws = draws }
+];
+
+{
+  part1 = [
+    for game in games:
+    if is_possible(game.draws):
+    game.id
+  ].fold(0, (x, y) => x + y)
+}
