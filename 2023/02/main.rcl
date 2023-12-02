@@ -1,9 +1,23 @@
 let input = std.read_file_utf8("input.txt");
 
+// Condition for part 1.
 let is_possible = draws => [
   for draw in draws:
   (draw.red <= 12) and (draw.green <= 13) and (draw.blue <= 14)
 ].fold(true, (x, y) => x and y);
+
+// Power computation for part 2.
+let power = draws =>
+  let maxima = draws.fold(
+      { red = 0, green = 0, blue = 0 },
+      (x, y) => {
+        for k, vx in x:
+        // TODO: This should be `y[k]`, implement indexing on dicts.
+        let vy = y.get(k, 0);
+        k: if vx > vy then vx else vy,
+      },
+    );
+  maxima.red * maxima.green * maxima.blue;
 
 let games = [
   for line in input.split_lines():
@@ -34,5 +48,9 @@ let games = [
     for game in games:
     if is_possible(game.draws):
     game.id
-  ].fold(0, (x, y) => x + y)
+  ].fold(0, (x, y) => x + y),
+
+  part2 = [
+    for game in games: power(game.draws)
+  ].fold(0, (x, y) => x + y),
 }
