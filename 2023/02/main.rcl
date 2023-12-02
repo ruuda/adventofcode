@@ -1,0 +1,14 @@
+let input = std.read_file_utf8("../adventofcode/2023/02/example.txt");
+[
+  for line in input.split_lines():
+  let game_draws = line.split(": ");
+  let game_id_str = game_draws[0].split(" ")[1];
+  let draws = [
+    for draw in game_draws[1].split("; "): [
+      for counts in draw.split(", "):
+      let count_color = counts.split(" ");
+      { count_color[1]: count_color[0] }
+    ]
+  ];
+  { id = game_id_str, draws = draws }
+]
