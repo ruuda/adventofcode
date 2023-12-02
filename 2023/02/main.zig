@@ -66,19 +66,37 @@ fn is_game_possible(game: Game) bool {
     return true;
 }
 
+fn power(game: Game) u32 {
+    var minr = game.draws[0].red;
+    var ming = game.draws[0].green;
+    var minb = game.draws[0].blue;
+
+    for (game.draws) |draw| {
+        minr = if (draw.red > minr) draw.red else minr;
+        ming = if (draw.green > ming) draw.green else ming;
+        minb = if (draw.blue > minb) draw.blue else minb;
+    }
+
+    return minr * ming * minb;
+}
+
 pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
     const games = try read_input();
     var possible_sum: u32 = 0;
+    var power_sum: u32 = 0;
 
     for (games.items) |game| {
+        const p = power(game);
         if (is_game_possible(game)) {
-            try stdout.print("Game {d}: possible.\n", .{game.id});
+            try stdout.print("Game {d}: power {d}, possible.\n", .{ game.id, p });
             possible_sum += game.id;
         } else {
-            try stdout.print("Game {d}: impossible.\n", .{game.id});
+            try stdout.print("Game {d}: power {d}, impossible.\n", .{ game.id, p });
         }
+        power_sum += p;
     }
 
-    try stdout.print("Sum of possible ids: {d}.\n", .{possible_sum});
+    try stdout.print("Part 1: Sum of possible ids: {d}.\n", .{possible_sum});
+    try stdout.print("Part 2: Sum of powers: {d}.\n", .{power_sum});
 }
