@@ -16,6 +16,7 @@ Some languages that I still want to try:
  * [ ] D
  * [ ] F#
  * [ ] Guile, Racket
+ * [ ] Hare
  * [ ] Hoon
  * [ ] Nim
  * [ ] OCaml
