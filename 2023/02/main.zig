@@ -11,11 +11,11 @@ const Game = struct {
     draws: []Draw,
 };
 
-pub fn read_input() !std.ArrayList(Game) {
+fn read_input() !std.ArrayList(Game) {
     const allocator = std.heap.page_allocator;
     var result = std.ArrayList(Game).init(allocator);
 
-    const file = try std.fs.cwd().openFile("example.txt", .{});
+    const file = try std.fs.cwd().openFile("input.txt", .{});
     defer file.close();
 
     var buf_reader = std.io.bufferedReader(file.reader());
@@ -36,7 +36,6 @@ pub fn read_input() !std.ArrayList(Game) {
             var colors = std.mem.splitAny(u8, draw_str, ",");
             while (colors.next()) |color| {
                 const trimmed = std.mem.trim(u8, color, " ");
-                std.debug.print("Trimmed: {s}\n", .{trimmed});
                 const split = std.mem.indexOfAny(u8, trimmed, " ").?;
                 const count_str = trimmed[0..split];
                 const color_str = trimmed[split + 1 ..];
@@ -58,11 +57,28 @@ pub fn read_input() !std.ArrayList(Game) {
     return result;
 }
 
+fn is_game_possible(game: Game) bool {
+    for (game.draws) |draw| {
+        if (draw.red > 12) return false;
+        if (draw.green > 13) return false;
+        if (draw.blue > 14) return false;
+    }
+    return true;
+}
+
 pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
-    var games = try read_input();
+    const games = try read_input();
+    var possible_sum: u32 = 0;
 
     for (games.items) |game| {
-        try stdout.print("Game id was {d}!\n", .{game.id});
+        if (is_game_possible(game)) {
+            try stdout.print("Game {d}: possible.\n", .{game.id});
+            possible_sum += game.id;
+        } else {
+            try stdout.print("Game {d}: impossible.\n", .{game.id});
+        }
     }
+
+    try stdout.print("Sum of possible ids: {d}.\n", .{possible_sum});
 }
