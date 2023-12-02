@@ -8,7 +8,7 @@ const Draw = struct {
 
 const Game = struct {
     id: u32,
-    draws: [3]Draw,
+    draws: []Draw,
 };
 
 pub fn read_input() !std.ArrayList(Game) {
@@ -29,17 +29,27 @@ pub fn read_input() !std.ArrayList(Game) {
         const id_str = iter.next().?;
         const id = try std.fmt.parseInt(u32, id_str["Game ".len..], 10);
 
-        // const draw0_str = iter.next().?;
-        // const draw1_str = iter.next().?;
-        // const draw2_str = iter.next().?;
+        var draws = std.ArrayList(Draw).init(allocator);
 
-        const draw0 = Draw{ .red = 0, .green = 0, .blue = 0 };
-        const draw1 = Draw{ .red = 0, .green = 0, .blue = 0 };
-        const draw2 = Draw{ .red = 0, .green = 0, .blue = 0 };
-
+        while (iter.next()) |draw_str| {
+            var draw = Draw{ .red = 0, .green = 0, .blue = 0 };
+            var colors = std.mem.splitAny(u8, draw_str, ",");
+            while (colors.next()) |color| {
+                const trimmed = std.mem.trim(u8, color, " ");
+                std.debug.print("Trimmed: {s}\n", .{trimmed});
+                const split = std.mem.indexOfAny(u8, trimmed, " ").?;
+                const count_str = trimmed[0..split];
+                const color_str = trimmed[split + 1 ..];
+                const count = try std.fmt.parseInt(u32, count_str, 10);
+                if (std.mem.eql(u8, color_str, "red")) draw.red = count;
+                if (std.mem.eql(u8, color_str, "green")) draw.green = count;
+                if (std.mem.eql(u8, color_str, "blue")) draw.blue = count;
+            }
+            try draws.append(draw);
+        }
         const game = Game{
             .id = id,
-            .draws = [_]Draw{ draw0, draw1, draw2 },
+            .draws = try draws.toOwnedSlice(),
         };
 
         try result.append(game);
