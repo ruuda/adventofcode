@@ -38,7 +38,7 @@ void main() {
 
       default:
         // For punctuation that is not '.', the surrounding cells should be
-        // marked.
+        // marked, put them on the frontier.
         marks[y][x] = '.';
         for (int dy = -1; dy <= 1; dy++) {
           int yy = y + dy;
@@ -48,7 +48,6 @@ void main() {
             if (xx < 0 || xx >= line.length) continue;
             char cell = data[yy][xx];
             if ('0' <= cell && cell <= '9') {
-              marks[yy][xx] = 'd';
               frontier ~= [xx, yy];
             }
           }
@@ -57,6 +56,32 @@ void main() {
     }
   }
 
+  // Next we process the frontier to discover the full integers that have at
+  // least one marked digit.
+  for (int f = 0; f < frontier.length; f++) {
+    int x = frontier[f][0];
+    int y = frontier[f][1];
+    if (marks[y][x] != '?') continue;
+    marks[y][x] = 'd';
+
+    foreach (dx; [-1, 1]) {
+      int xx = x + dx;
+      if (xx < 0 || xx >= marks[y].length) continue;
+      char cell = data[y][xx];
+      if ('0' <= cell && cell <= '9') {
+        frontier ~= [xx, y];
+      }
+    }
+
+    writeln("\nAfter frontier ", f);
+    for (int i = 0; i < data.length; i++) {
+      write(data[i]);
+      write("   ");
+      writeln(marks[i]);
+    }
+  }
+
+  writeln("\nFinal map:");
   for (int i = 0; i < data.length; i++) {
     write(data[i]);
     write("   ");
