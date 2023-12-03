@@ -10,10 +10,31 @@ solution must be written in either:
  * A language that I haven’t used before in this repository.
  * A language in the bottom 50% used in this repository, by lines of code.
 
+Languages used as of 2023 day 3, as computed by `languages.sh`:
+
+```
+Language   %Used   %Cumulative   Files   Allowed Next
+Pony        15.9          15.9       4   No
+Haskell     13.7          29.6       7   No
+Python      11.4          41.0      10   No
+C           11.0          52.0       2   No
+Rust        10.7          62.7       5   Yes
+Go           9.6          72.3       3   Yes
+AWK          8.0          80.3      10   Yes
+Nix          6.6          86.9       5   Yes
+D            3.5          90.4       1   Yes
+SQL          2.5          92.9       1   Yes
+Zig          2.3          95.3       1   Yes
+RCL          1.2          96.4       1   Yes
+Unison       1.2          97.6       1   Yes
+Racket       0.9          98.5       1   Yes
+Shell        0.9          99.4       1   Yes
+Scheme       0.6         100.0       1   Yes
+```
 Some languages that I still want to try:
 
  * [ ] Clojure
- * [ ] D
+ * [x] D
  * [ ] F#
  * [ ] Guile, Racket
  * [ ] Hare
@@ -22,26 +43,6 @@ Some languages that I still want to try:
  * [ ] OCaml
  * [ ] Prolog
  * [x] Zig
-
-Languages used as of 2023 day 2, as computed by `languages.sh`:
-
-```
-Language   %Used   %Cumulative   Files   Allowed Next
-Pony        16.7          16.7       4   No
-Haskell     14.3          31.0       7   No
-Python      12.0          43.0      10   No
-C           11.5          54.6       2   No
-Rust        11.2          65.7       5   Yes
-Go          10.1          75.8       3   Yes
-AWK          8.4          84.2      10   Yes
-Nix          6.9          91.1       5   Yes
-SQL          2.7          93.8       1   Yes
-Zig          2.5          96.2       1   Yes
-Unison       1.2          97.5       1   Yes
-Racket       0.9          98.4       1   Yes
-Shell        0.9          99.3       1   Yes
-Scheme       0.6         100.0       1   Yes
-```
 
 ## License
 
