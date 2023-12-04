@@ -20,19 +20,25 @@ let card_points = card => [
   n
 ].fold(0, (score, n) => if score == 0 then 1 else score * 2);
 
-// Points computation for part 2.
-let card_depth = (self, card) =>
-  let n_matches = [for n in card.haves: if card.wins.contains(n): 1].len();
-  // The lis indices of the cards we won copies for.
-  let next_copies = std.range(card.id, card.id + n_matches);
-  let recursive_counts = [for i in next_copies: self(self, cards[i])];
-  recursive_counts.fold(1, (x, y) => x + y);
+// Computation for part 2. We recursively build a list with the "depth" of every
+// card, starting from the back, because earlier cards only reference later
+// cards.
+let card_depths = (self, i) =>
+  if
+    i >= cards.len()
+  then
+    []
+  else
+    let depths = self(self, i + 1);
+    let card = cards[i];
+    let n_matches = [for n in card.haves: if card.wins.contains(n): 1].len();
+    // Sum up the depths for the next n matches.
+    // TODO: Add slicing to make this easier.
+    let next_depths = [for j in std.range(0, n_matches): depths[j]];
+    let depth_i = next_depths.fold(1, (x, y) => x + y);
+    [depth_i, for d in depths: d];
 
 {
   part1 = [for card in cards: card_points(card)].fold(0, (x, y) => x + y),
-  part2 = [
-    for card in cards:
-    trace f"Card {card.id} of {cards.len()}.";
-    card_depth(card_depth, card)
-  ].fold(0, (x, y) => x + y),
+  part2 = card_depths(card_depths, 0).fold(0, (x, y) => x + y),
 }
