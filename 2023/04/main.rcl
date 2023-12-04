@@ -1,23 +1,38 @@
 let lines = std.read_file_utf8("input.txt").split_lines();
 let cards = [
   for line in lines:
-  // The "Card 1: " prefix is useless, the input is ordered. Cut off the prefix.
-  let numbers_part = line.split(": ")[1];
-  let wins_haves_str = numbers_part.split(" | ");
+  // Split "Card {n}: {numbers}" into parts.
+  let card_id_numbers = line.split(": ");
+  let card_id = card_id_numbers[0].split(" ")[-1].parse_int();
+  let wins_haves_str = card_id_numbers[1].split(" | ");
   let wins_haves = [
     for numbers in wins_haves_str: {
       for n in numbers.split(" "): if n != "": n.parse_int()
     }
   ];
-  { wins = wins_haves[0], haves = wins_haves[1] }
+  { id = card_id, wins = wins_haves[0], haves = wins_haves[1] }
 ];
 
+// Points computation for part 1.
 let card_points = card => [
   for n in card.haves:
   if card.wins.contains(n):
   n
 ].fold(0, (score, n) => if score == 0 then 1 else score * 2);
 
+// Points computation for part 2.
+let card_depth = (self, card) =>
+  let n_matches = [for n in card.haves: if card.wins.contains(n): 1].len();
+  // The lis indices of the cards we won copies for.
+  let next_copies = std.range(card.id, card.id + n_matches);
+  let recursive_counts = [for i in next_copies: self(self, cards[i])];
+  recursive_counts.fold(1, (x, y) => x + y);
+
 {
   part1 = [for card in cards: card_points(card)].fold(0, (x, y) => x + y),
+  part2 = [
+    for card in cards:
+    trace f"Card {card.id} of {cards.len()}.";
+    card_depth(card_depth, card)
+  ].fold(0, (x, y) => x + y),
 }
