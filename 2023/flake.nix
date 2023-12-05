@@ -35,6 +35,7 @@
             pkgs.ghc
             pkgs.go
             pkgs.nim
+            pkgs.nim
             pkgs.ocaml
             pkgs.ponyc
             pkgs.python3
