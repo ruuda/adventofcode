@@ -1,0 +1,26 @@
+let data = std.read_file_utf8("example.txt");
+let sections = data.split("\n\n");
+let seeds = [for x in sections[0].split(": ")[1].split(" "): x.parse_int()];
+let maps = [
+  for section in sections:
+  // TODO: Add a better way to exclude the first element, in this case list
+  // slicing, but but string `starts_with` would also help.
+  if section != sections[0]:
+  let name_entries = section.split(":\n");
+  let entries = name_entries[1].split("\n");
+  [
+    for entry in entries:
+    if entry != "":
+    let nums = entry.split(" ");
+    {
+      dst_start = nums[0].parse_int(),
+      src_start = nums[1].parse_int(),
+      range_len = nums[2].parse_int(),
+    }
+  ],
+];
+
+{
+  seeds = seeds,
+  maps = maps,
+}
