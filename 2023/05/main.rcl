@@ -1,3 +1,4 @@
+// This is an attempt to rewrite the Nim version in RCL to dogfood RCL.
 let data = std.read_file_utf8("example.txt");
 let sections = data.split("\n\n");
 let seeds = [for x in sections[0].split(": ")[1].split(" "): x.parse_int()];
@@ -20,6 +21,59 @@ let maps = [
   ],
 ];
 
+// Helper functions for dealing with ranges of integers, and implementing the
+// move from the exercise on them.
+let range = (begin, end) => { begin = begin, end = end };
+let offset_range = (r, off) => { for k, v in r: k: v + off };
+let move_range = (in_range, map_range, offset) =>
+  if
+    // No overlap
+    in_range.end <= map_range.begin
+  then
+    { unmapped = [in_range], mapped = [] }
+
+  else if
+    in_range.begin >= map_range.past_end
+  then
+    { unmapped = [in_range], mapped = [] }
+
+  else if
+    // The inner range is contained so we map the entire thing.
+    (in_range.begin >= map_range.begin) and (in_range.past_end <= map_range.past_end)
+  then
+    { mapped = [offset_range(in_range, offset)], unmapped = [] }
+
+  else if
+    // The map range is contained, so we have to slice it out.
+    (map_range.begin >= in_range.begin) and (map_range.past_end <= in_range.past_end)
+  then
+    {
+      mapped = [offset_range(map_range, offset)],
+      unmapped = [
+        range(in_range.begin, map_range.begin),
+        range(map_range.end, in_range.end),
+      ],
+    }
+
+  else if
+    // The map range overlaps the left-hand side.
+    map_range.begin <= in_range.begin
+  then
+    assert map_range.past_end <= in_range.past_end, "Ranges must be consistent.";
+    {
+      mapped = [range(in_range.begin + offset, map_range.end + offset)],
+      unmapped = [range(map_range.end, in_range.end)],
+    }
+
+  else
+    // The map range overlaps the right-hand side.
+    assert map_range.begin >= in_range.begin, "Cases are exhaustive.";
+    {
+      mapped = [range(map_range.begin + offset, in_range.end + offset)],
+      unmapped = [range(in_range.begin, map_range.begin)],
+    };
+
+// TODO: Apply these functions to solve the puzzle.
 {
   seeds = seeds,
   maps = maps,
