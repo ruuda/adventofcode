@@ -7,14 +7,22 @@ import std/math
 var distances: seq[int]
 var times: seq[int]
 
+let part = 2
+
 for line in "input.txt".lines:
   var raw: string
 
   if scanf(line, "Distance: $+", raw):
-    distances = map(filter(split(raw, ' '), x => x != ""), parseInt)
+    if part == 1:
+      distances = map(filter(split(raw, ' '), x => x != ""), parseInt)
+    else:
+      distances = @[parseInt(replace(raw, " ", ""))]
 
   if scanf(line, "Time: $+", raw):
-    times = map(filter(split(raw, ' '), x => x != ""), parseInt)
+    if part == 1:
+      times = map(filter(split(raw, ' '), x => x != ""), parseInt)
+    else:
+      times = @[parseInt(replace(raw, " ", ""))]
 
 var result_product = 1.0
 
