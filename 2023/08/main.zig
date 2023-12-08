@@ -17,7 +17,7 @@ fn read_input() !Input {
     const allocator = std.heap.page_allocator;
     var result = std.AutoHashMap(Loc, Node).init(allocator);
 
-    const file = try std.fs.cwd().openFile("example1.txt", .{});
+    const file = try std.fs.cwd().openFile("input.txt", .{});
     defer file.close();
 
     var buf_reader = std.io.bufferedReader(file.reader());
@@ -46,5 +46,19 @@ pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
     const input = try read_input();
 
-    try stdout.print("Have input {d}.\n", .{input.nodes.count()});
+    var loc: [3]u8 = "AAA".*;
+    var cursor: usize = 0;
+    var steps: usize = 0;
+
+    while (!std.mem.eql(u8, &loc, "ZZZ")) {
+        const node = input.nodes.get(loc).?;
+        if (input.nav[cursor] == 'L') {
+            loc = node.left;
+        } else {
+            loc = node.right;
+        }
+        steps = steps + 1;
+        cursor = (cursor + 1) % input.nav.len;
+        try stdout.print("Step {d} to {s}.\n", .{ steps, loc });
+    }
 }
