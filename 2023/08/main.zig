@@ -147,7 +147,7 @@ pub fn part2(fname: []const u8) !void {
     }
 
     while (true) {
-        if (steps_since_print > 1000 * 1000) {
+        if (steps_since_print > 10 * 1000 * 1000 * 1000) {
             steps_since_print = 0;
             try stdout.print("Step {d}.\n", .{steps});
         }
