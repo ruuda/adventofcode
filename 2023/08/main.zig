@@ -66,53 +66,45 @@ pub fn part1(fname: []const u8) !void {
 pub fn part2(fname: []const u8) !void {
     const stdout = std.io.getStdOut().writer();
     const input = try read_input(fname);
-
     const allocator = std.heap.page_allocator;
-    var locs = std.ArrayList([3]u8).init(allocator);
 
     var keys = input.nodes.keyIterator();
     while (keys.next()) |k| {
-        if (k[2] == 'A') {
-            try locs.append(k.*);
-        }
-    }
+        if (k[2] != 'A') continue;
 
-    var cursor: usize = 0;
-    var steps: usize = 0;
+        var path = std.ArrayList([3]u8).init(allocator);
+        var cursor: usize = 0;
+        var loc: [3]u8 = k.*;
+        try path.append(loc);
 
-    while (true) {
-        var at_end = true;
-        for (locs.items) |loc| {
-            if (loc[2] != 'Z') {
-                at_end = false;
-                break;
-            }
-        }
-
-        if (at_end) {
-            break;
-        }
-
-        steps = steps + 1;
-        for (locs.items) |*loc| {
-            const node = input.nodes.get(loc.*).?;
+        while (true) {
+            const node = input.nodes.get(loc).?;
             if (input.nav[cursor] == 'L') {
-                loc.* = node.left;
+                loc = node.left;
             } else {
-                loc.* = node.right;
+                loc = node.right;
             }
-            // try stdout.print("Step {d} to {s}.\n", .{ steps, loc });
-        }
-        cursor = (cursor + 1) % input.nav.len;
+            cursor = (cursor + 1) % input.nav.len;
 
-        if (steps % 1000 == 1) {
-            try stdout.print("At step {d}.\n", .{steps});
+            var found_cycle = false;
+            for (path.items, 0..) |prev, i| {
+                if (std.mem.eql(u8, &loc, &prev) and cursor == i % input.nav.len) {
+                    found_cycle = true;
+                    break;
+                }
+            }
+
+            if (found_cycle) break;
+
+            try path.append(loc);
         }
+
+        try stdout.print("Key {s} has a period of {d}.\n", .{ k, path.items.len });
     }
-    try stdout.print("Took {d} steps.\n", .{steps});
 }
 
 pub fn main() !void {
     // try part1("example1.txt");
+    try part2("example3.txt");
     try part2("input.txt");
 }
