@@ -8,7 +8,7 @@ const Node = struct {
 };
 
 const Input = struct {
-    nav: std.ArrayList(u8),
+    nav: []u8,
     nodes: std.AutoHashMap(Loc, Node),
 };
 
@@ -25,18 +25,21 @@ fn read_input() !Input {
     var buf: [2048]u8 = undefined;
 
     const nav = (try in_stream.readUntilDelimiterOrEof(&buf, '\n')).?;
-    var nav_arr = std.ArrayList(u8).init(allocator);
-    try nav_arr.appendSlice(nav);
+    const nav_owned = try allocator.dupe(u8, nav);
+
+    // Skip over the blank line that follows the nav directions.
+    _ = try in_stream.readUntilDelimiterOrEof(&buf, '\n');
 
     while (try in_stream.readUntilDelimiterOrEof(&buf, '\n')) |line| {
-        var iter = std.mem.splitAny(u8, line, " =(,)");
-
-        const src = iter.next().?;
-        const nn = iter.next().?;
-        try stdout.print("Game {s} then {s}.\n", .{ src, nn });
+        // Get the identifiers from a line of the form. "AAA = (BBB, CCC)"
+        const src = line[0..3].*;
+        const left = line[7..10].*;
+        const right = line[12..15].*;
+        try result.put(src, Node{ .left = left, .right = right });
+        try stdout.print("Node {s} -> ({s}, {s}).\n", .{ src, left, right });
     }
 
-    return Input{ .nav = nav_arr, .nodes = result };
+    return Input{ .nav = nav_owned, .nodes = result };
 }
 
 pub fn main() !void {
