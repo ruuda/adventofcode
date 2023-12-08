@@ -104,6 +104,10 @@ pub fn part2(fname: []const u8) !void {
             // try stdout.print("Step {d} to {s}.\n", .{ steps, loc });
         }
         cursor = (cursor + 1) % input.nav.len;
+
+        if (steps % 1000 == 1) {
+            try stdout.print("At step {d}.\n", .{steps});
+        }
     }
     try stdout.print("Took {d} steps.\n", .{steps});
 }
