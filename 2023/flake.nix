@@ -34,7 +34,7 @@
             pkgs.fsharp
             pkgs.ghc
             pkgs.go
-            pkgs.nim
+            pkgs.hare
             pkgs.nim
             pkgs.ocaml
             pkgs.ponyc
