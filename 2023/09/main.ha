@@ -6,7 +6,7 @@ use strings;
 use strconv;
 
 export fn main() void = {
-	const source = os::open("input.txt")!;
+	const source = os::open("example.txt")!;
 	const source = io::drain(source)!;
 	const source = strings::fromutf8(source)!;
 	const lines: []str = strings::split(source, "\n");
@@ -19,13 +19,13 @@ export fn main() void = {
 		const numstrs = strings::split(line, " ");
 		const n = len(numstrs);
 
-		let xs: []i32 = alloc([0...], (n + 1) * (n + 1));
+		let xs: []i32 = alloc([0...], (n + 2) * (n + 2));
 
 		// Parse the input numbers and put them in the base row of the
 		// triangle.
 		for (let j: size = 0; j < len(numstrs); j += 1) {
 			let n = strconv::stoi32(numstrs[j])!;
-			xs[j] = n;
+			xs[j + 1] = n;
 			fmt::printf("{} ", n)!;
 		};
 		fmt::println("")!;
@@ -33,25 +33,28 @@ export fn main() void = {
 		// Fill the differences at every layer.
 		for (let d: size = 1; d < n; d += 1) {
 			for (let j: size = 0; j < n - d; j += 1) {
-				const lhs = xs[n * (d - 1) + j];
-				const rhs = xs[n * (d - 1) + j + 1];
-				xs[n * d + j] = rhs - lhs;
-				fmt::printf("{} ", xs[n * d + j])!;
+				const lhs = xs[n * (d - 1) + j + 1];
+				const rhs = xs[n * (d - 1) + j + 2];
+				xs[n * d + j + 1] = rhs - lhs;
+				fmt::printf("{} ", xs[n * d + j + 1])!;
 			};
 			fmt::println("")!;
 
 		};
 
-		xs[(n - 1) * n + 1] = xs[(n - 1) * n];
+		// Fill the top of the triangle differences.
+		xs[(n - 1) * n + 0] = xs[(n - 1) * n + 1];
+		xs[(n - 1) * n + 2] = xs[(n - 1) * n + 1];
 
 		for (let nd: size = 0; nd < n; nd += 1) {
 			const d = n - nd - 1;
-			const diff = xs[n * (d + 1) + nd];
-			const lhs = xs[n * d + nd];
-			xs[n * d + nd + 1] = lhs + diff;
+			const diff = xs[n * (d + 1) + nd + 1];
+			const lhs = xs[n * d + nd + 1];
+			xs[n * d + nd + 2] = lhs + diff;
+			// TODO: Find also the other diff.
 		};
-		fmt::printfln("Corner: {}", xs[n])!;
-		corner_sum += xs[n];
+		fmt::printfln("Corner: {}", xs[n + 1])!;
+		corner_sum += xs[n + 1];
 		fmt::println("")!;
 	};
 	fmt::printfln("Part 1 answer: {}", corner_sum)!;
