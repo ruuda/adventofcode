@@ -1,13 +1,14 @@
+import algorithm
 import std/heapqueue
 import std/sequtils
-import std/strutils
 import std/strformat
+import std/strutils
 import std/sugar
 
 var maze: seq[string] = @[]
 var sx, sy: int
 
-for line in "example4.txt".lines:
+for line in "input.txt".lines:
   if line == "":
     continue
 
@@ -65,14 +66,29 @@ distances[sy][sx] = 0
 # reachable from the start. These are not just the neighbors of the start, they
 # also need to connect back!
 var open: HeapQueue[(int, int, int)] = initHeapQueue[(int, int, int)]()
-var sdx, sdy: int = 0
+var start_conns: string = ""
 for dx, dy in endpoints('S'):
   let cell = maze[sy + dy][sx + dx]
   for ddx, ddy in endpoints(cell):
     if (dx + ddx) == 0 and (dy + ddy) == 0:
       open.push((1, sx + dx, sy + dy))
+      if dx == 0 and dy == 1: start_conns.add('S')
+      if dx == 0 and dy == -1: start_conns.add('N')
+      if dx == -1 and dy == 0: start_conns.add('W')
+      if dx == 1 and dy == 0: start_conns.add('E')
 
-echo "Initial nodes: ", $open
+start_conns.sort()
+echo fmt"Initial nodes: {$open} start_conns={start_conns}"
+
+# Replace the start symbol with the unique pipe piece that fits there.
+maze[sy][sx] = case start_conns:
+  of "ES": 'F'
+  of "NS": '|'
+  of "EN": 'L'
+  of "EW": '-'
+  of "SW": '7'
+  of "NW": 'J'
+  else: raise newException(Defect, "Unknown start piece")
 
 while open.len > 0:
   let (d, x, y) = open.pop()
@@ -86,17 +102,6 @@ while open.len > 0:
 
   for dx, dy in endpoints(maze[y][x]):
     open.push((d + 1, x + dx, y + dy))
-
-# Print the distances, just for visual debugging.
-for line in distances:
-  for d in line:
-    if d == -1:
-      stdout.write('.')
-    elif d <= 9:
-      stdout.write(d)
-    else:
-      stdout.write('X')
-  stdout.write('\n')
 
 # For part 2, we are going to classify every cell into one of 2^4 cases, one
 # bit for each quadrant, which is 0 for outside and 1 for inside. The mask is:
@@ -125,16 +130,21 @@ func getComponent(mask: uint8, into: uint8, left: uint8, top_left: uint8, top: u
   if bits == mask:
     into
   elif bits == ((not mask) and 0b11111):
-    not into
+    (not into) and 0b1111
   else:
     raise newException(
       Defect,
-      fmt"Component is not consistent among marked quarter cells: mask:{mask:05b} bits:{bits:05b}"
+      fmt"""
+      Component is not consistent among marked quarter cells:
+      mask:{mask:05b} bits:{bits:05b}
+      left:{left:04b} top_left:{top_left:04b} top:{top:04b}
+      """
     )
 
 # We start out by marking everything as outside, because the outside ring that
 # we added is definitely outside, then we can go from there.
 var component_map: seq[seq[uint8]] = maze.map(line => line.map(_ => 0u8))
+var cells_inside: int = 0
 for y in countup(1, maze.len - 2):
   for x in countup(1, maze[0].len - 2):
     let left = component_map[y][x - 1]
@@ -146,6 +156,7 @@ for y in countup(1, maze.len - 2):
       # loop, and it does not affect inside/outside. The component has to be the
       # same all around.
       component_map[y][x] = getComponent(0b11111, 0b1111, left, top_left, top)
+      cells_inside += (if component_map[y][x] == 0b1111: 1 else: 0)
       continue
 
     # If this cell *is* part of the main loop, then it forms a boundary of the
@@ -165,5 +176,24 @@ for y in countup(1, maze.len - 2):
         component_map[y][x] = getComponent(0b11_1_10, 0b1101, left, top_left, top)
       else:
         raise newException(Defect, fmt"This should not happen.")
+    
+    cells_inside += (if component_map[y][x] == 0b1111: 1 else: 0)
 
-echo "Max distance: ", max_dist
+# Print the distances for visual debugging, print also the inside for visual
+# confirmation.
+for y in countup(1, maze.len - 2):
+  for x in countup(1, maze[0].len - 2):
+    let d = distances[y][x]
+    let c = component_map[y][x]
+    if c == 0b1111:
+      stdout.write('I')
+    elif d == -1:
+      stdout.write('.')
+    elif d <= 9:
+      stdout.write(d)
+    else:
+      stdout.write('X')
+  stdout.write('\n')
+
+echo "1: Max distance: ", max_dist
+echo "2: Area inside:  ", cells_inside
