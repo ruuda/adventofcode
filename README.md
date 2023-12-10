@@ -10,27 +10,28 @@ solution must be written in either:
  * A language that I haven’t used before in this repository.
  * A language in the bottom 50% used in this repository, by lines of code.
 
-Languages used as of 2023 day 8, as computed by `languages.sh`:
+Languages used as of 2023 day 10, as computed by `languages.sh`:
 
 ```
-Language   %Used   %Cumulative   Files   Allowed Next
-Pony        14.3          14.3       4   No
-Haskell     12.3          26.5       7   No
-Python      10.2          36.8      10   No
-C            9.9          46.6       2   No
-Rust         9.6          56.2       5   No
-Go           8.6          64.8       3   Yes
-AWK          7.2          72.0      10   Yes
-Zig          6.0          77.9       2   Yes
-Nix          5.9          83.9       5   Yes
-Nim          4.1          87.9       3   Yes
-RCL          3.5          91.4       3   Yes
-D            3.1          94.5       1   Yes
-SQL          2.3          96.8       1   Yes
-Unison       1.0          97.9       1   Yes
-Racket       0.8          98.7       1   Yes
-Shell        0.8          99.5       1   Yes
-Scheme       0.5         100.0       1   Yes
+Language   %Used   %Cumulative   Files   Lines   Allowed Next
+Pony        13.6          13.6       4     565   [ ]
+Haskell     11.7          25.3       7     485   [ ]
+Python       9.7          35.0      10     405   [ ]
+C            9.4          44.4       2     390   [ ]
+Rust         9.1          53.5       5     378   [ ]
+Go           8.2          61.7       3     342   [x]
+Nim          7.4          69.0       4     306   [x]
+AWK          6.8          75.9      10     283   [x]
+Zig          5.7          81.5       2     236   [x]
+Nix          5.7          87.2       5     235   [x]
+RCL          3.3          90.5       3     138   [x]
+D            3.0          93.5       1     124   [x]
+SQL          2.2          95.6       1      90   [x]
+Hare         1.3          96.9       1      53   [x]
+Unison       1.0          97.9       1      41   [x]
+Shell        0.8          98.7       1      34   [x]
+Racket       0.8          99.5       1      32   [x]
+Scheme       0.5         100.0       1      21   [x]
 ```
 
 Some languages that I still want to try:

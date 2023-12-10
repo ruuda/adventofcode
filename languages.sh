@@ -15,25 +15,27 @@ tokei \
   $1 == "Total" {
     total = $4
     cumulative = 0
-    print("Language,%Used,%Cumulative,Files,Allowed Next")
+    print("Language,%Used,%Cumulative,Files,Lines,Allowed Next")
   }
   $4 ~ /[0-9]+/ && $1 != "Total" {
     fraction = $4 / total
     cumfraction = (cumulative + $4) / total
-    decision = cumulative / total <= 0.5 ? "No" : "Yes"
+    decision = cumulative / total <= 0.5 ? "[ ]" : "[x]"
     color = cumulative / total <= 0.5 ? "31" : "32"
-    printf("\x1b[%sm%s,%5.1f,%5.1f,%d,%s\x1b[0m\n",
+    if ($1 == "Headache") $1 = "Hare";
+    printf("\x1b[%sm%s,%5.1f,%5.1f,%d,%d,%s\x1b[0m\n",
       color,
       $1,
       fraction * 100.0,
       cumfraction * 100.0,
       $2,
+      $4,
       decision)
     cumulative += $4
   }
   ' \
   | column \
   --table \
-  --table-right 2,3,4 \
+  --table-right 2,3,4,5 \
   --output-separator '   ' \
   --separator ,
