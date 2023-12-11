@@ -10,24 +10,25 @@ solution must be written in either:
  * A language that I haven’t used before in this repository.
  * A language in the bottom 50% used in this repository, by lines of code.
 
-Languages used as of 2023 day 10, as computed by `languages.sh`:
+Languages used as of 2023 day 11, as computed by `languages.sh`:
 
 ```
 Language   %Used   %Cumulative   Files   Lines   Allowed Next
-Pony        13.6          13.6       4     565   [ ]
-Haskell     11.7          25.3       7     485   [ ]
-Python       9.7          35.0      10     405   [ ]
-C            9.4          44.4       2     390   [ ]
-Rust         9.1          53.5       5     378   [ ]
-Go           8.2          61.7       3     342   [x]
-Nim          7.4          69.0       4     306   [x]
-AWK          6.8          75.9      10     283   [x]
-Zig          5.7          81.5       2     236   [x]
-Nix          5.7          87.2       5     235   [x]
-RCL          3.3          90.5       3     138   [x]
-D            3.0          93.5       1     124   [x]
-SQL          2.2          95.6       1      90   [x]
-Hare         1.3          96.9       1      53   [x]
+Pony        13.4          13.4       4     565   [ ]
+Haskell     11.5          24.8       7     485   [ ]
+Python       9.6          34.4      10     405   [ ]
+C            9.2          43.6       2     390   [ ]
+Rust         8.9          52.6       5     378   [ ]
+Go           8.1          60.7       3     342   [x]
+Nim          7.2          67.9       4     306   [x]
+AWK          6.7          74.6      10     283   [x]
+Zig          5.6          80.2       2     236   [x]
+Nix          5.6          85.7       5     235   [x]
+RCL          3.3          89.0       3     138   [x]
+D            2.9          91.9       1     124   [x]
+SQL          2.1          94.1       1      90   [x]
+OCaml        1.7          95.7       1      70   [x]
+Hare         1.3          97.0       1      53   [x]
 Unison       1.0          97.9       1      41   [x]
 Shell        0.8          98.7       1      34   [x]
 Racket       0.8          99.5       1      32   [x]
@@ -40,10 +41,10 @@ Some languages that I still want to try:
  * [x] D
  * [ ] F#
  * [ ] Guile, Racket
- * [ ] Hare
+ * [x] Hare
  * [ ] Hoon
  * [x] Nim
- * [ ] OCaml
+ * [x] OCaml
  * [ ] Prolog
  * [x] Zig
 
