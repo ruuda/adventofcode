@@ -22,15 +22,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1700693875,
-        "narHash": "sha256-8jnu2MEJLkappzrslbdLqkBtnN25bqBgC6SphmaT0HA=",
+        "lastModified": 1701734538,
+        "narHash": "sha256-OsKwm0vSRS1hEwCPsi99l1IwzzknOJXA7NvhixSVqWs=",
         "owner": "ruuda",
         "repo": "rcl",
-        "rev": "1fdf14fa11afe616f91e311ba7021aa2071adc35",
+        "rev": "ddf21a2aa79f1ccff980c25790de99efa7501131",
         "type": "github"
       },
       "original": {
         "owner": "ruuda",
+        "ref": "more-builtins",
         "repo": "rcl",
         "type": "github"
       }

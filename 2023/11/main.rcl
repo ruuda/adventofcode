@@ -1,0 +1,62 @@
+// Load the input, break it up into a list of characters per row.
+let map = [
+  for line in std.read_file_utf8("input.txt").split_lines():
+  [for char in line.split(""): if char != "": char]
+];
+
+// Get the coordinates of the galaxies, where there is a '#' symbol.
+let galaxy_positions = [
+  for y in std.range(0, map.len()):
+  let line = map[y];
+  for x in std.range(0, line.len()):
+  if line[x] == "#":
+  { x = x, y = y }
+];
+
+let empty_rows = [
+  for y in std.range(0, map.len()):
+  let line = map[y];
+  if not line.contains("#"):
+  y
+];
+
+let empty_columns = [
+  for x in std.range(0, map[0].len()):
+  let galaxies_in_column = [for line in map: if line[x] == "#": 1];
+  if galaxies_in_column.len() == 0:
+  x
+];
+
+// Set to 1 for part 1 and to 999_999 for part 2.
+// let expansion = 1;
+let expansion = 999_999;
+
+// Move all galaxies by filling the gaps. Expects the gaps to be presented in
+// ascending order. We fold over them in reverse because the galaxies to the end
+// get moved by all the gaps before them.
+let expand_x = (galaxies, gaps) => gaps.reverse().fold(galaxies, (gs, gap_x) => [
+  for g in gs:
+  { x = g.x + (if g.x > gap_x then expansion else 0), y = g.y }
+]);
+let expand_y = (galaxies, gaps) => gaps.reverse().fold(galaxies, (gs, gap_y) => [
+  for g in gs:
+  { x = g.x, y = g.y + (if g.y > gap_y then expansion else 0) }
+]);
+
+let abs = x => if x < 0 then -x else x;
+
+// Return the distances (using the Manhattan metric) for all pairs of galaxies.
+let pairwise_distances = galaxies => [
+  for i in std.range(0, galaxies.len()):
+  let gi = galaxies[i];
+  for j in std.range(i + 1, galaxies.len()):
+  let gj = galaxies[j];
+  let dx = gi.x - gj.x;
+  let dy = gi.y - gj.y;
+  abs(dx) + abs(dy)
+];
+
+let galaxies_1 = expand_x(galaxy_positions, empty_columns);
+let galaxies_2 = expand_y(galaxies_1, empty_rows);
+let distances = pairwise_distances(galaxies_2);
+distances.fold(0, (x, y) => x + y)
