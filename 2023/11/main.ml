@@ -39,16 +39,19 @@ let locate_empty_columns: string list -> int list = fun rows ->
   let res = List.fold_left IntSet.inter (List.hd sets) sets in
   List.rev (IntSet.elements res)
 
+(* For part 1 this is 1, for part 2 this is 1M - 1. *)
+let expansion = 999999
+
 (* Move all the galaxies to account for x-gaps. Assumes the gaps are sorted in
 descending order. *)
 let expand_x: int list -> (int * int) list -> (int * int) list =
   fun gaps galaxies -> List.fold_left
-    (fun gs gx -> List.map (fun (x, y) -> ((if x > gx then x + 1 else x), y)) gs)
+    (fun gs gx -> List.map (fun (x, y) -> ((if x > gx then x + expansion else x), y)) gs)
     galaxies gaps
 
 let expand_y: int list -> (int * int) list -> (int * int) list =
   fun gaps galaxies -> List.fold_left
-    (fun gs gy -> List.map (fun (x, y) -> (x, if y > gy then y + 1 else y)) gs)
+    (fun gs gy -> List.map (fun (x, y) -> (x, if y > gy then y + expansion else y)) gs)
     galaxies gaps
 
 let sum_pair_distances: (int * int) list -> int = fun galaxies ->
