@@ -36,7 +36,7 @@
             pkgs.go
             pkgs.hare
             pkgs.nim
-            pkgs.ocaml
+            pkgs.ocaml-ng.ocamlPackages_5_1.ocaml
             pkgs.ponyc
             pkgs.python3
             pkgs.rustc

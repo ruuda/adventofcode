@@ -1,5 +1,8 @@
+*.cmi
+*.cmx
 input.txt
-main.o
 main
+main.o
 part1
 part2
+result
