@@ -1,5 +1,5 @@
 (* Run with `ocaml main.ml` or `ocamlopt -o main main.ml && main`. *)
-let file = "example.txt"
+let file = "input.txt"
 
 module IntSet = Set.Make(Int);;
 
@@ -51,8 +51,21 @@ let expand_y: int list -> (int * int) list -> (int * int) list =
     (fun gs gy -> List.map (fun (x, y) -> (x, if y > gy then y + 1 else y)) gs)
     galaxies gaps
 
+let sum_pair_distances: (int * int) list -> int = fun galaxies ->
+  let (_, res) = List.fold_left
+    (fun (n, s) (g1x, g1y) ->
+      let next_s = Seq.fold_left
+        (fun ss (g2x, g2y) -> ss + (Int.abs (g1x - g2x)) + (Int.abs (g1y - g2y)))
+        s
+        (Seq.drop n (List.to_seq galaxies)) in
+      (n + 1, next_s)
+    )
+    (1, 0)
+    galaxies in
+  res
+
 let () =
-  let map = In_channel.with_open_text "example.txt" In_channel.input_lines in
+  let map = In_channel.with_open_text file In_channel.input_lines in
   List.iter print_endline map;
   let galaxies = locate_galaxies map in
   List.iter (fun (x, y) -> Printf.printf "%i %i\n" x y) galaxies;
@@ -63,4 +76,5 @@ let () =
     (locate_empty_columns map)
     (expand_y (locate_empty_rows map) galaxies) in
   List.iter (fun (x, y) -> Printf.printf "EXP %i %i\n" x y) expanded_galaxies;
+  Printf.printf "RESULT %i\n" (sum_pair_distances expanded_galaxies);
   flush stdout
