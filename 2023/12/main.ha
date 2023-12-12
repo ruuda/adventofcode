@@ -5,115 +5,74 @@ use os;
 use strings;
 use strconv;
 
-fn count_options(map: []u8, lens: []u32) u32 = {
-	let result_i: u32 = 0;
+fn count_options(map: []u8, lens: []u32, expect_end: u8) u32 = {
+	const m = len(map);
+	const n = len(lens);
+	assert(m > 0, "Should not call this on empty input because we expect a particular end.");
 
-	// The starting positions of each of the springs.
-	let start_positions: []u32 = alloc([0...], len(lens));
-	let cursor: u32 = 0;
+	const at_end = map[m - 1];
+	const end_matches = (at_end == expect_end) || (at_end == '?') || (expect_end == '?');
 
-	for (true) {
-		const stpos = start_positions[cursor];
-		const s_len = lens[cursor];
+	if (!end_matches) return 0;
+	if (n > m) return 0;
+	if (n > 0 && lens[0] > m) return 0;
 
-		let is_good = true;
-		let is_fatal = false;
+	if (m == 1 && n == 1 && expect_end == '.') return 0;
+	if (m == 1 && n == 0 && at_end == '.') return 1;
+	if (m == 1 && n == 0 && at_end == '?') return 1;
+	if (m == 1 && n == 1 && at_end == '.') return 0;
+	if (m == 1 && n == 1 && at_end == '?') return 1;
+	if (m == 1 && n == 1 && at_end == '#') return 1;
+	assert(m > 1, "The cases above are exhaustive.");
 
-		let remaining_len = lens[cursor];
-		for (let c = cursor + 1; c < len(lens); c += 1) {
-			remaining_len += 1 + lens[c];
-		};
-		// If this spring and the ones following it do not fit
-		// here, then we are done at this level.
-		if (stpos + remaining_len > len(map)) {
-			is_fatal = true;
-		} else {
-			// From the end of the previous spring until the start
-			// of this one, there needs to be a gap. If there was
-			// not, then we shouldn't even bother trying from here.
-			let gap_start: u32 = 0;
-			if (cursor > 0) gap_start = start_positions[cursor - 1] + lens[cursor - 1];
-			for (let k: u32 = gap_start; k < stpos; k += 1) {
-				if (map[k] == '#') {
-					is_good = false;
-					is_fatal = true;
-					break;
-				};
-			};
-		};
+	// Counts assuming that the character at_end is . and # respectively.
+	let cnt_hole: u32 = 0;
+	let cnt_full: u32 = 0;
 
-		if (is_fatal) {
-			// If this was spring 0, then nothing can fit
-			// after it, so we are done entirely.
-			if (cursor == 0) break;
-
-			// If we were at a later spring, and it does not
-			// fit, then we exhausted the possible positions
-			// for this one, and we can try moving an
-			// earlier one.
-			cursor -= 1;
-			start_positions[cursor] += 1;
-			continue;
-		};
-
-		// Then this spring itself should not contain any gaps.
-		// We check in reverse to be able to make a larger jump.
-		if (is_good) {
-			for (let k: u32 = 0; k < s_len; k += 1) {
-				const n = stpos + s_len - k - 1;
-				if (map[n] == '.') {
-					is_good = false;
-					// We can jump ahead past the gap.
-					start_positions[cursor] = n;
-					break;
-				};
-			};
-		};
-
-		// After the final cursor, there should also only be a
-		// gap. Again, we iterate backwards so we can skip over as much
-		// as possible.
-		if (is_good && cursor + 1 == len(lens)) {
-			for (let k = len(map) - 1; k >= stpos + s_len; k -= 1) {
-				if (map[k] == '#') {
-					is_good = false;
-					// Subtract one more because we
-					// increment at the end of the loop.
-					const jump_start = (k: u32) - s_len - 1;
-					if (jump_start > start_positions[cursor]) start_positions[cursor] = jump_start;
-					break;
-				};
-			};
-		};
-
-		if (is_good) {
-			if (cursor + 1 == len(lens)) {
-				// This was the last spring we had to
-				// place, and it fits. Count one. Next
-				// iteration we can still try to move
-				// this spring.
-				result_i += 1;
-			} else {
-				// This spring fits, but we have more
-				// to place. The next spring has to
-				// start after a gap after this one. The
-				// end of the loop already increments so
-				// we don't add one for the gap here.
-				cursor += 1;
-				start_positions[cursor] = stpos + s_len;
-			};
-		};
-		// This spring does not fit here, we'll try to
-		// move it in the next iteration, and we already
-		// moved it over the gap if we encountered one.
-		start_positions[cursor] += 1;
+	if (at_end == '.' || (at_end == '?' && expect_end != '#')) {
+		// Assuming that the last character is a ., then the number of
+		// options for this map template is the same as the shorter one.
+		const k = count_options(map[..m - 1], lens, '?');
+		cnt_hole += count_options(map[..m - 1], lens, '?');
 	};
 
-	return result_i;
+	if ((at_end == '#' || (at_end == '?' && expect_end != '.')) && n > 0) {
+		// Assuming that the last character is a #, then we consumed one
+		// from the final group, so reduce the count there, or remove
+		// the group entirely if that makes the group empty.
+		if (lens[n - 1] == 1) {
+			cnt_full += count_options(map[..m - 1], lens[..n - 1], '.');
+		} else {
+			assert(lens[n - 1] > 1, "Length should be at least 1.");
+			lens[n - 1] -= 1;
+			cnt_full += count_options(map[..m - 1], lens, '#');
+			lens[n - 1] += 1;
+		};
+	};
+
+	const debug_print = false;
+	if (debug_print) {
+		for (let k: size = 0; k < len(map); k += 1) {
+			switch (map[k]) {
+			case '.' => fmt::printf(".")!;
+			case '?' => fmt::printf("?")!;
+			case '#' => fmt::printf("#")!;
+			};
+		};
+		switch (expect_end) {
+		case '.' => fmt::printf(" [.]")!;
+		case '?' => fmt::printf(" [?]")!;
+		case '#' => fmt::printf(" [#]")!;
+		};
+		for (let k: size = 0; k < len(lens); k += 1) fmt::printf(" {}", lens[k])!;
+		fmt::printf(" -> .={} + #={} = {}\n", cnt_hole, cnt_full, cnt_hole + cnt_full)!;
+	};
+
+	return cnt_hole + cnt_full;
 };
 
 export fn main() void = {
-	const part = 2;
+	const part = 1;
 	const source = os::open("input.txt")!;
 	const source = io::drain(source)!;
 	const source = strings::fromutf8(source)!;
@@ -133,7 +92,7 @@ export fn main() void = {
 
 		let result_i: u32 = 0;
 		if (part == 1) {
-			result_i = count_options(map, lens);
+			result_i = count_options(map, lens, '?');
 		};
 
 		if (part == 2) {
@@ -159,6 +118,7 @@ export fn main() void = {
 				cnt[k] = count_options(
 					map5[..(n + 1) * (k + 1) - 1],
 					lens5[..m * (k + 1)],
+					'?',
 				);
 				fmt::printf("{}: x {}: {}\n", i, k + 1, cnt[k])!;
 			};
