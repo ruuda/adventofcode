@@ -6,7 +6,7 @@ use strings;
 use strconv;
 
 export fn main() void = {
-	const source = os::open("example.txt")!;
+	const source = os::open("input.txt")!;
 	const source = io::drain(source)!;
 	const source = strings::fromutf8(source)!;
 	const lines: []str = strings::split(source, "\n");
@@ -31,16 +31,11 @@ export fn main() void = {
 			const stpos = start_positions[cursor];
 			const s_len = lens[cursor];
 
-			// We are at the end if the spring no longer fits on the
-			// map. But we are also at the end if there is a known
-			// spring just before we start this one, because it
-			// means we would be ignoring that existing spring if we
-			// started past it.
-			if ((stpos + s_len > len(map)) || (stpos > 0 && map[stpos - 1] == '#')) {
-				// This spring does not fit here, we are done
-				// at this level. If this was spring 0, then
-				// nothing can fit after it, so we are done
-				// entirely.
+			// If this spring does not fit here, then we are done at
+			// this level.
+			if (stpos + s_len > len(map)) {
+				// If this was spring 0, then nothing can fit
+				// after it, so we are done entirely.
 				if (cursor == 0) break;
 
 				// If we were at a later spring, and it does not
@@ -56,27 +51,33 @@ export fn main() void = {
 
 			let is_good = true;
 
-			// After the spring, there needs to be a gap, or we need
-			// to be at the end. The gap might be a ?.
-			if ((stpos + s_len < len(map)) && (map[stpos + s_len] == '#')) {
-				is_good = false;
-				// We can't just jump ahead though, that there
-				// is a spring after us could just mean the
-				// start position is off-by-one.
+			// From the end of the previous spring until the start
+			// of this one, there needs to be a gap.
+			let gap_start: u32 = 0;
+			if (cursor > 0) gap_start = start_positions[cursor - 1] + lens[cursor - 1];
+			for (let k: u32 = gap_start; k < stpos; k += 1) {
+				if (map[k] == '#') {
+					is_good = false;
+					break;
+				};
 			};
 
+			// Then this spring itself should not contain any gaps.
 			if (is_good) {
-				// Loop over the presumed position of the spring
-				// that the cursor points at. If we find a # or
-				// ? that's okay, but if we find a '.', then the
-				// spring is not here, and the next place it
-				// could be is after. We loop backwards so we
-				// can make the jump as big as possible.
-				for (let k: u32 = 0; k < s_len; k += 1) {
-					const n = stpos + s_len - 1 - k;
-					if (map[n] == '.') {
+				for (let k: u32 = stpos; k < stpos + s_len; k += 1) {
+					if (map[k] == '.') {
 						is_good = false;
-						start_positions[cursor] = n;
+						break;
+					};
+				};
+			};
+
+			// After the final cursor, there should also only be a
+			// gap.
+			if (is_good && cursor + 1 == len(lens)) {
+				for (let k: u32 = stpos + s_len; k < len(map); k += 1) {
+					if (map[k] == '#') {
+						is_good = false;
 						break;
 					};
 				};
@@ -85,10 +86,9 @@ export fn main() void = {
 			if (is_good) {
 				if (cursor + 1 == len(lens)) {
 					// This was the last spring we had to
-					// place, and it fits, so count one way
-					// in which we can place the springs.
-					// In the next iteration, we can try to
-					// move this spring still.
+					// place, and it fits. Count one. Next
+					// iteration we can still try to move
+					// this spring.
 					result_i += 1;
 					fmt::printf("{}: Found:", i)!;
 					for (let z: size = 0; z < len(lens); z += 1) {
@@ -99,8 +99,8 @@ export fn main() void = {
 					// This spring fits, but we have more
 					// to place. The next spring has to
 					// start after a gap after this one. The
-					// start of the loop increments so we
-					// don't add one for the gap here.
+					// end of the loop already increments so
+					// we don't add one for the gap here.
 					cursor += 1;
 					start_positions[cursor] = stpos + s_len;
 				};
@@ -109,7 +109,7 @@ export fn main() void = {
 			// move it in the next iteration, and we already
 			// moved it over the gap if we encountered one.
 			start_positions[cursor] += 1;
-			fmt::printf("{} | {}: -> {}\n", i, cursor, start_positions[cursor])!;
+			// fmt::printf("{} | {}: -> {}\n", i, cursor, start_positions[cursor])!;
 		};
 
 		fmt::printf("{}: {}\n", i, result_i)!;
