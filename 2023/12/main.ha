@@ -71,11 +71,16 @@ fn count_options(map: []u8, lens: []u32) u32 = {
 		};
 
 		// After the final cursor, there should also only be a
-		// gap.
+		// gap. Again, we iterate backwards so we can skip over as much
+		// as possible.
 		if (is_good && cursor + 1 == len(lens)) {
-			for (let k: u32 = stpos + s_len; k < len(map); k += 1) {
+			for (let k = len(map) - 1; k >= stpos + s_len; k -= 1) {
 				if (map[k] == '#') {
 					is_good = false;
+					// Subtract one more because we
+					// increment at the end of the loop.
+					const jump_start = (k: u32) - s_len - 1;
+					if (jump_start > start_positions[cursor]) start_positions[cursor] = jump_start;
 					break;
 				};
 			};
@@ -109,7 +114,7 @@ fn count_options(map: []u8, lens: []u32) u32 = {
 
 export fn main() void = {
 	const part = 2;
-	const source = os::open("input.txt")!;
+	const source = os::open("example.txt")!;
 	const source = io::drain(source)!;
 	const source = strings::fromutf8(source)!;
 	const lines: []str = strings::split(source, "\n");
@@ -155,7 +160,7 @@ export fn main() void = {
 					map5[..(n + 1) * (k + 1) - 1],
 					lens5[..m * (k + 1)],
 				);
-				fmt::printf("{}: x {}: {}\n", i, k, cnt[k])!;
+				fmt::printf("{}: x {}: {}\n", i, k + 1, cnt[k])!;
 			};
 			// Now it's down to counting the number of ways to
 			// combine the above. We have 4 '?'s to place that can
