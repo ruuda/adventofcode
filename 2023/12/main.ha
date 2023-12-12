@@ -31,7 +31,12 @@ export fn main() void = {
 			const stpos = start_positions[cursor];
 			const s_len = lens[cursor];
 
-			if (stpos + s_len > len(map)) {
+			// We are at the end if the spring no longer fits on the
+			// map. But we are also at the end if there is a known
+			// spring just before we start this one, because it
+			// means we would be ignoring that existing spring if we
+			// started past it.
+			if ((stpos + s_len > len(map)) || (stpos > 0 && map[stpos - 1] == '#')) {
 				// This spring does not fit here, we are done
 				// at this level. If this was spring 0, then
 				// nothing can fit after it, so we are done
