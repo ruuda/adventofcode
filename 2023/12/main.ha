@@ -30,7 +30,6 @@ export fn main() void = {
 		for (true) {
 			const stpos = start_positions[cursor];
 			const s_len = lens[cursor];
-			let is_good = true;
 
 			if (stpos + s_len > len(map)) {
 				// This spring does not fit here, we are done
@@ -44,26 +43,38 @@ export fn main() void = {
 				// for this one, and we can try moving an
 				// earlier one.
 				cursor -= 1;
+				fmt::printf("{} | BACK {}: {} -> ", i, cursor, start_positions[cursor])!;
 				start_positions[cursor] += 1;
+				fmt::printf("{}\n", start_positions[cursor])!;
 				continue;
 			};
 
-			// Loop over the presumed position of the spring that
-			// the cursor points at. If we find a # or ? that's
-			// okay, but if we find a '.', then the spring is not
-			// here, and the next place it could be is after.
-			for (let k: u32 = stpos; k < stpos + s_len; k += 1) {
-				if (map[k] == '.') {
-					is_good = false;
-					start_positions[cursor] = k;
-					break;
-				};
-			};
+			let is_good = true;
+
 			// After the spring, there needs to be a gap, or we need
 			// to be at the end. The gap might be a ?.
-			if ((len(map) < stpos + s_len) && (map[stpos + s_len] == '#')) {
+			if ((stpos + s_len < len(map)) && (map[stpos + s_len] == '#')) {
 				is_good = false;
-				start_positions[cursor] = stpos + s_len;
+				// We can't just jump ahead though, that there
+				// is a spring after us could just mean the
+				// start position is off-by-one.
+			};
+
+			if (is_good) {
+				// Loop over the presumed position of the spring
+				// that the cursor points at. If we find a # or
+				// ? that's okay, but if we find a '.', then the
+				// spring is not here, and the next place it
+				// could be is after. We loop backwards so we
+				// can make the jump as big as possible.
+				for (let k: u32 = 0; k < s_len; k += 1) {
+					const n = stpos + s_len - 1 - k;
+					if (map[n] == '.') {
+						is_good = false;
+						start_positions[cursor] = n;
+						break;
+					};
+				};
 			};
 
 			if (is_good) {
@@ -93,6 +104,7 @@ export fn main() void = {
 			// move it in the next iteration, and we already
 			// moved it over the gap if we encountered one.
 			start_positions[cursor] += 1;
+			fmt::printf("{} | {}: -> {}\n", i, cursor, start_positions[cursor])!;
 		};
 
 		fmt::printf("{}: {}\n", i, result_i)!;
