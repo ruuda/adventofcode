@@ -36,7 +36,7 @@ fn count_options(map: []u8, lens: []u32) u32 = {
 			for (let k: u32 = gap_start; k < stpos; k += 1) {
 				if (map[k] == '#') {
 					is_good = false;
-					is_fatal = false;
+					is_fatal = true;
 					break;
 				};
 			};
@@ -114,7 +114,7 @@ fn count_options(map: []u8, lens: []u32) u32 = {
 
 export fn main() void = {
 	const part = 2;
-	const source = os::open("example.txt")!;
+	const source = os::open("input.txt")!;
 	const source = io::drain(source)!;
 	const source = strings::fromutf8(source)!;
 	const lines: []str = strings::split(source, "\n");
