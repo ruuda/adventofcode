@@ -5,6 +5,7 @@ use os;
 use strings;
 use strconv;
 
+// TODO: Implement using dynamic programming instead of recursion ...
 fn count_options(map: []u8, lens: []u32, expect_end: u8) u32 = {
 	const m = len(map);
 	const n = len(lens);
@@ -20,6 +21,7 @@ fn count_options(map: []u8, lens: []u32, expect_end: u8) u32 = {
 	if (m == 1 && n == 1 && expect_end == '.') return 0;
 	if (m == 1 && n == 0 && at_end == '.') return 1;
 	if (m == 1 && n == 0 && at_end == '?') return 1;
+	if (m == 1 && n == 0 && at_end == '#') return 0;
 	if (m == 1 && n == 1 && at_end == '.') return 0;
 	if (m == 1 && n == 1 && at_end == '?') return 1;
 	if (m == 1 && n == 1 && at_end == '#') return 1;
@@ -72,8 +74,8 @@ fn count_options(map: []u8, lens: []u32, expect_end: u8) u32 = {
 };
 
 export fn main() void = {
-	const part = 1;
-	const source = os::open("input.txt")!;
+	const part = 2;
+	const source = os::open("example.txt")!;
 	const source = io::drain(source)!;
 	const source = strings::fromutf8(source)!;
 	const lines: []str = strings::split(source, "\n");
