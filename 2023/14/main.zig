@@ -18,11 +18,39 @@ fn read_input(fname: []const u8) ![][]u8 {
     return board.items;
 }
 
+pub fn move_north(board: [][]u8) void {
+    for (0..board[0].len) |x| {
+        var y0: usize = 0;
+        while (y0 < board.len) {
+            var n: usize = 0;
+            var y1 = board.len;
+            for (y0..board.len) |y| {
+                switch (board[y][x]) {
+                    'O' => n += 1,
+                    '#' => {
+                        y1 = y;
+                        break;
+                    },
+                    else => {},
+                }
+            }
+            for (y0..y0 + n) |y| board[y][x] = 'O';
+            for (y0 + n..y1) |y| board[y][x] = '.';
+            y0 = y1 + 1;
+        }
+    }
+}
+
 pub fn part1(fname: []const u8) !void {
     const stdout = std.io.getStdOut().writer();
-    const board = try read_input(fname);
-
+    var board = try read_input(fname);
     try stdout.print("Board has {d} rows and {d} cols.\n", .{ board.len, board[0].len });
+
+    move_north(board);
+
+    for (board) |line| {
+        try stdout.print("{s}.\n", .{line});
+    }
 }
 
 pub fn main() !void {
