@@ -47,12 +47,21 @@ pub fn part1(fname: []const u8) !void {
     try stdout.print("Board has {d} rows and {d} cols.\n", .{ board.len, board[0].len });
 
     move_north(board);
-
     for (board) |line| {
         try stdout.print("{s}.\n", .{line});
     }
+
+    var total_load: usize = 0;
+    for (board, 0..) |line, i| {
+        const weight = board.len - i;
+        for (line) |ch| {
+            if (ch == 'O') total_load += weight;
+        }
+    }
+
+    try stdout.print("Part 1: Total load: {d}.\n", .{total_load});
 }
 
 pub fn main() !void {
-    try part1("example.txt");
+    try part1("input.txt");
 }
