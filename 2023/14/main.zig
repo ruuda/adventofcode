@@ -55,7 +55,7 @@ pub fn move_east_west(board: [][]u8, comptime dir: u8) void {
             var n: usize = 0;
             var x1 = board[y].len;
             for (x0..board[y].len) |x| {
-                const xx = if (dir == 'E') x else board[y].len - 1 - x;
+                const xx = if (dir == 'W') x else board[y].len - 1 - x;
                 switch (board[y][xx]) {
                     'O' => n += 1,
                     '#' => {
@@ -66,11 +66,11 @@ pub fn move_east_west(board: [][]u8, comptime dir: u8) void {
                 }
             }
             for (x0..x0 + n) |x| {
-                const xx = if (dir == 'E') x else board.len - 1 - x;
+                const xx = if (dir == 'W') x else board.len - 1 - x;
                 board[y][xx] = 'O';
             }
             for (x0 + n..x1) |x| {
-                const xx = if (dir == 'E') x else board.len - 1 - x;
+                const xx = if (dir == 'W') x else board.len - 1 - x;
                 board[y][xx] = '.';
             }
             x0 = x1 + 1;
@@ -93,7 +93,7 @@ pub fn print_board(board: [][]u8) !void {
     // Would be better to pass in stdout, but I don't know what type it has.
     const stdout = std.io.getStdOut().writer();
     for (board) |line| {
-        try stdout.print("{s}.\n", .{line});
+        try stdout.print("{s}\n", .{line});
     }
 }
 
@@ -118,27 +118,16 @@ pub fn part2(fname: []const u8) !void {
 
     for (0..5) |round| {
         var new_board = try allocator.alloc([]u8, board.len);
-        for (board, 0..) |line, i| {
+        for (history.items[round], 0..) |line, i| {
             new_board[i] = try allocator.dupe(u8, line);
         }
         try stdout.print("\nRound {d}:\n", .{round});
-        try print_board(new_board);
-
         move_north_south(new_board, 'N');
-        try stdout.print("\nRound {d} N:\n", .{round});
-        try print_board(new_board);
-
         move_east_west(new_board, 'W');
-        try stdout.print("\nRound {d} W:\n", .{round});
-        try print_board(new_board);
-
         move_north_south(new_board, 'S');
-        try stdout.print("\nRound {d} S:\n", .{round});
-        try print_board(new_board);
-
         move_east_west(new_board, 'E');
-        try stdout.print("\nRound {d} E:\n", .{round});
         try print_board(new_board);
+        try history.append(new_board);
     }
 }
 
