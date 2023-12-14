@@ -140,10 +140,14 @@ pub fn part2(fname: []const u8) !void {
             if (is_same) {
                 // Now that we know where the cycle is, we can infer which state
                 // the final state is.
-                const cycle_len = round - j;
-                const k = j + (1000000000 - 1 - j) % cycle_len;
-                try stdout.print("\nFound cycle {d}..{d} -> {d}", .{ j, round, k });
                 found_cycle = true;
+                const cycle_len = round - j;
+                // We are looking for index 1M, index 0 is the initial board,
+                // index 1 is after 1 cycle, etc.
+                const k = j + (1_000_000_000 - j) % (cycle_len + 1);
+                try stdout.print("\nFound cycle of length {d}, state[{d}] == state[{d}] -> {d}\n", .{ cycle_len, j, round, k });
+                const total_load = total_load_north_support(history.items[k]);
+                try stdout.print("Part 2: Total load: {d}.\n", .{total_load});
                 break;
             }
         }
@@ -155,5 +159,5 @@ pub fn part2(fname: []const u8) !void {
 
 pub fn main() !void {
     //try part1("input.txt");
-    try part2("example.txt");
+    try part2("input.txt");
 }
