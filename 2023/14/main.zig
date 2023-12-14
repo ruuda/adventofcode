@@ -116,7 +116,8 @@ pub fn part2(fname: []const u8) !void {
     var history = std.ArrayList([][]u8).init(allocator);
     try history.append(board);
 
-    for (0..5) |round| {
+    for (0..1000000000) |round| {
+        var found_cycle = false;
         var new_board = try allocator.alloc([]u8, board.len);
         for (history.items[round], 0..) |line, i| {
             new_board[i] = try allocator.dupe(u8, line);
@@ -127,6 +128,27 @@ pub fn part2(fname: []const u8) !void {
         move_north_south(new_board, 'S');
         move_east_west(new_board, 'E');
         try print_board(new_board);
+
+        for (history.items, 0..) |prev_board, j| {
+            var is_same = true;
+            for (prev_board, new_board) |line_prev, line_new| {
+                if (!std.mem.eql(u8, line_prev, line_new)) {
+                    is_same = false;
+                    break;
+                }
+            }
+            if (is_same) {
+                // Now that we know where the cycle is, we can infer which state
+                // the final state is.
+                const cycle_len = round - j;
+                const k = j + (1000000000 - 1 - j) % cycle_len;
+                try stdout.print("\nFound cycle {d}..{d} -> {d}", .{ j, round, k });
+                found_cycle = true;
+                break;
+            }
+        }
+
+        if (found_cycle) break;
         try history.append(new_board);
     }
 }
