@@ -10,29 +10,29 @@ solution must be written in either:
  * A language that I haven’t used before in this repository.
  * A language in the bottom 50% used in this repository, by lines of code.
 
-Languages used as of 2023 day 11, as computed by `languages.sh`:
+Languages used as of 2023 day 15, as computed by `languages.sh`:
 
 ```
 Language   %Used   %Cumulative   Files   Lines   Allowed Next
-Pony        13.4          13.4       4     565   [ ]
-Haskell     11.5          24.8       7     485   [ ]
-Python       9.6          34.4      10     405   [ ]
-C            9.2          43.6       2     390   [ ]
-Rust         8.9          52.6       5     378   [ ]
-Go           8.1          60.7       3     342   [x]
-Nim          7.2          67.9       4     306   [x]
-AWK          6.7          74.6      10     283   [x]
-Zig          5.6          80.2       2     236   [x]
-Nix          5.6          85.7       5     235   [x]
-RCL          3.3          89.0       3     138   [x]
-D            2.9          91.9       1     124   [x]
-SQL          2.1          94.1       1      90   [x]
-OCaml        1.7          95.7       1      70   [x]
-Hare         1.3          97.0       1      53   [x]
-Unison       1.0          97.9       1      41   [x]
-Shell        0.8          98.7       1      34   [x]
-Racket       0.8          99.5       1      32   [x]
-Scheme       0.5         100.0       1      21   [x]
+Pony        12.0          12.0       4     565   [ ]
+Haskell     10.3          22.3       7     485   [ ]
+Python       8.6          30.9      10     405   [ ]
+C            8.3          39.2       2     390   [ ]
+Rust         8.0          47.2       5     378   [ ]
+Zig          8.0          55.2       3     376   [ ]
+Go           7.3          62.5       3     342   [x]
+Nim          6.5          69.0       4     306   [x]
+AWK          6.0          75.0      10     283   [x]
+Nix          5.0          80.0       5     236   [x]
+D            4.5          84.6       2     214   [x]
+RCL          3.9          88.5       4     184   [x]
+Hare         3.8          92.3       2     179   [x]
+OCaml        3.1          95.4       2     144   [x]
+SQL          1.9          97.3       1      90   [x]
+Unison       0.9          98.2       1      41   [x]
+Shell        0.7          98.9       1      34   [x]
+Racket       0.7          99.6       1      32   [x]
+Scheme       0.4         100.0       1      21   [x]
 ```
 
 Some languages that I still want to try:
