@@ -120,7 +120,7 @@ fn count_options_dp(map: []u8, lens: []u32) u32 = {
 
 export fn main() void = {
 	const part = 2;
-	const source = os::open("example.txt")!;
+	const source = os::open("test.txt")!;
 	const source = io::drain(source)!;
 	const source = strings::fromutf8(source)!;
 	const lines: []str = strings::split(source, "\n");
@@ -187,9 +187,15 @@ export fn main() void = {
 				+ 2 * c4 * c1
 				+ 1 * c5
 			);
+			fmt::printf("{}: (combi) {}\n", i, result_i)!;
+			for (let k: size = 1; k < 5; k += 1) {
+				map5[(n + 1) * k - 1] = '?';
+			};
+			result_i = count_options_dp(map5, lens5);
+			fmt::printf("{}: (brute) {}\n", i, result_i)!;
 		};
-
 		fmt::printf("{}: {}\n", i, result_i)!;
+
 		result += result_i;
 	};
 	fmt::printf("Total: {}\n", result)!;
