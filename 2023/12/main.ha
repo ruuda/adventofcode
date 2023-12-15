@@ -107,7 +107,7 @@ fn count_options_dp(map: []u8, lens: []u32) u32 = {
 				if (c == 1) fmt::printf(" [#]")!;
 				for (let n: size = 0; n <= s; n += 1) {
 					const k = n * lm * 2 + m * 2 + c;
-					fmt::printf("   {}: {}", n, buf[k])!;
+					fmt::printf(" {:2}: {:4}", n, buf[k])!;
 				};
 				fmt::printf("\n")!;
 			};
@@ -119,7 +119,7 @@ fn count_options_dp(map: []u8, lens: []u32) u32 = {
 };
 
 export fn main() void = {
-	const part = 2;
+	const part = 1;
 	const source = os::open("test.txt")!;
 	const source = io::drain(source)!;
 	const source = strings::fromutf8(source)!;
@@ -147,7 +147,6 @@ export fn main() void = {
 			// 1..5 times, with a # in between. When there's a . in
 			// between, those we can compute from the smaller parts
 			// because it makes the two sections independent.
-			let cnt: [5]u32 = [0...];
 			const n = len(map);
 			const m = len(lens);
 			let map5: []u8 = alloc([0...], n * 5 + 4);
@@ -156,43 +155,12 @@ export fn main() void = {
 				for (let j: size = 0; j < n; j += 1) {
 					map5[(n + 1) * k + j] = map[j];
 				};
-				// For counting, we split only by #, the case
-				// where the ? is a . we can easily compute.
-				if (k > 0) map5[(n + 1) * k - 1] = '#';
+				if (k > 0) map5[(n + 1) * k - 1] = '?';
 				for (let j: size = 0; j < m; j += 1) {
 					lens5[m * k + j] = lens[j];
 				};
-				cnt[k] = count_options_dp(
-					map5[..(n + 1) * (k + 1) - 1],
-					lens5[..m * (k + 1)],
-				);
-				fmt::printf("{}: x {}: {}\n", i, k + 1, cnt[k])!;
-			};
-			// Now it's down to counting the number of ways to
-			// combine the above. We have 4 '?'s to place that can
-			// be '.' or '#', so as a sanity check, the sum of the
-			// factors should be 2^4 = 16.
-			const c1 = cnt[0];
-			const c2 = cnt[1];
-			const c3 = cnt[2];
-			const c4 = cnt[3];
-			const c5 = cnt[4];
-			result_i = (
-				0
-				+ 1 * c1 * c1 * c1 * c1 * c1
-				+ 4 * c2 * c1 * c1 * c1
-				+ 3 * c2 * c2 * c1
-				+ 3 * c3 * c1 * c1
-				+ 2 * c3 * c2
-				+ 2 * c4 * c1
-				+ 1 * c5
-			);
-			fmt::printf("{}: (combi) {}\n", i, result_i)!;
-			for (let k: size = 1; k < 5; k += 1) {
-				map5[(n + 1) * k - 1] = '?';
 			};
 			result_i = count_options_dp(map5, lens5);
-			fmt::printf("{}: (brute) {}\n", i, result_i)!;
 		};
 		fmt::printf("{}: {}\n", i, result_i)!;
 
