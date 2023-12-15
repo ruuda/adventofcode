@@ -5,76 +5,118 @@ use os;
 use strings;
 use strconv;
 
-// TODO: Implement using dynamic programming instead of recursion ...
-fn count_options(map: []u8, lens: []u32, expect_end: u8) u32 = {
-	const m = len(map);
-	const n = len(lens);
-	assert(m > 0, "Should not call this on empty input because we expect a particular end.");
-
-	const at_end = map[m - 1];
-	const end_matches = (at_end == expect_end) || (at_end == '?') || (expect_end == '?');
-
-	if (!end_matches) return 0;
-	if (n > m) return 0;
-	if (n > 0 && lens[0] > m) return 0;
-
-	if (m == 1 && n == 1 && expect_end == '.') return 0;
-	if (m == 1 && n == 0 && at_end == '.') return 1;
-	if (m == 1 && n == 0 && at_end == '?') return 1;
-	if (m == 1 && n == 0 && at_end == '#') return 0;
-	if (m == 1 && n == 1 && at_end == '.') return 0;
-	if (m == 1 && n == 1 && at_end == '?') return 1;
-	if (m == 1 && n == 1 && at_end == '#') return 1;
-	assert(m > 1, "The cases above are exhaustive.");
-
-	// Counts assuming that the character at_end is . and # respectively.
-	let cnt_hole: u32 = 0;
-	let cnt_full: u32 = 0;
-
-	if (at_end == '.' || (at_end == '?' && expect_end != '#')) {
-		// Assuming that the last character is a ., then the number of
-		// options for this map template is the same as the shorter one.
-		const k = count_options(map[..m - 1], lens, '?');
-		cnt_hole += count_options(map[..m - 1], lens, '?');
+fn count_options_dp(map: []u8, lens: []u32) u32 = {
+	// We take the dynamic programming approach to computing the number of
+	// possibilities. The buffer at location [n, m, c] holds the number of
+	// possibilities to fill the map up to length m, by spending n # chars
+	// from the start of `lens`, when the last character in `map[..m]` is
+	// '.' (c=0) or '#' (c=1) respectively.
+	let s: size = 0;
+	for (let i: size = 0; i < len(lens); i += 1) {
+		s += lens[i];
 	};
+	const lm = len(map) + 1;
+	let buf: []u32 = alloc([0xbadbeef...], (s + 1) * lm * 2);
+	defer free(buf);
 
-	if ((at_end == '#' || (at_end == '?' && expect_end != '.')) && n > 0) {
-		// Assuming that the last character is a #, then we consumed one
-		// from the final group, so reduce the count there, or remove
-		// the group entirely if that makes the group empty.
-		if (lens[n - 1] == 1) {
-			cnt_full += count_options(map[..m - 1], lens[..n - 1], '.');
-		} else {
-			assert(lens[n - 1] > 1, "Length should be at least 1.");
-			lens[n - 1] -= 1;
-			cnt_full += count_options(map[..m - 1], lens, '#');
-			lens[n - 1] += 1;
-		};
-	};
+	const ends: [2]u8 = ['.', '#'];
 
-	const debug_print = false;
-	if (debug_print) {
-		for (let k: size = 0; k < len(map); k += 1) {
-			switch (map[k]) {
-			case '.' => fmt::printf(".")!;
-			case '?' => fmt::printf("?")!;
-			case '#' => fmt::printf("#")!;
+	// `n` iterates over the number of springs left to place.
+	for (let n: size = 0; n <= s; n += 1) {
+		// The springs have to be placed in groups, if we are placing
+		// the `n`-th spring now, how many other springs are there in
+		// the group that it is part of?
+		let n_in_group = n;
+		for (let i: size = 0; i < len(lens); i += 1) {
+			if (n_in_group > lens[i]) {
+				n_in_group -= lens[i];
+			} else {
+				break;
 			};
 		};
-		switch (expect_end) {
-		case '.' => fmt::printf(" [.]")!;
-		case '?' => fmt::printf(" [?]")!;
-		case '#' => fmt::printf(" [#]")!;
+		assert(n_in_group > 0 || n == 0, "Group can only be empty if we have no springs left.");
+
+		// `m` iterates over the size of the map.
+		for (let m: size = 1; m <= len(map); m += 1) {
+			// `c` iterates over the possible endings of the map.
+			for (let c: size = 0; c < len(ends); c += 1) {
+				const end = ends[c];
+				const k = n * lm * 2 + m * 2 + c;
+				const at_end = map[m - 1];
+				const end_matches = (at_end == end) || (at_end == '?');
+
+				// Base cases where we cannot place anything.
+				if (!end_matches) { buf[k] = 0; continue; };
+				if (n > m) { buf[k] = 0; continue; };
+				if (n == 0 && end == '#') { buf[k] = 0; continue; };
+
+				if (n == 0 && end == '#') { buf[k] = 0; continue; };
+				if (n == 0 && end == '.' && m == 1) { buf[k] = 1; continue; };
+				if (n == 1 && end == '.' && m == 1) { buf[k] = 0; continue; };
+				if (n == 1 && end == '#' && m == 1) { buf[k] = 1; continue; };
+				assert(m > 1, "The cases above are exhaustive for m <= 1.");
+
+				// We have no springs left to place, but that's
+				// okay because the ending is '.'.
+				if (n == 0 && end == '.') {
+					const r_empty = buf[0 * lm * 2 + (m - 1) * 2 + 0];
+					//fmt::printf("m={}: n={} c={} -> {}\n", m, n, c, r_empty)!;
+					buf[k] = r_empty;
+					continue;
+				};
+
+				assert(n_in_group >= 1, "At this point we handled all cases of empty groups.");
+
+				// If there is no group here, then both endings
+				// are allowed for the recursive case.
+				if (end == '.') {
+					const r_empty = buf[n * lm * 2 + (m - 1) * 2 + 0];
+					const r_full = buf[n * lm * 2 + (m - 1) * 2 + 1];
+					buf[k] = r_empty + r_full;
+					continue;
+				};
+
+				assert(end == '#', "At this point we handled all the cases that end in '.'.");
+
+				// If this is the first '#' in the group, then
+				// before it has to be a '.'. But if this is not
+				// the first one, then before it has to be a
+				// '#'.
+				if (n_in_group == 1) {
+					const r_empty = buf[(n - 1) * lm * 2 + (m - 1) * 2 + 0];
+					buf[k] = r_empty;
+				} else {
+					const r_full = buf[(n - 1) * lm * 2 + (m - 1) * 2 + 1];
+					buf[k] = r_full;
+				};
+			};
 		};
-		for (let k: size = 0; k < len(lens); k += 1) fmt::printf(" {}", lens[k])!;
-		fmt::printf(" -> .={} + #={} = {}\n", cnt_hole, cnt_full, cnt_hole + cnt_full)!;
 	};
 
-	return cnt_hole + cnt_full;
+	for (let m: size = 1; m <= len(map); m += 1) {
+		for (let c: size = 0; c < len(ends); c += 1) {
+			for (let i: size = 0; i < len(map); i += 1) {
+				if (i >= m) { fmt::printf("_")!; continue; };
+				if (map[i] == '.') fmt::printf(".")!;
+				if (map[i] == '#') fmt::printf("#")!;
+				if (map[i] == '?') fmt::printf("?")!;
+			};
+			if (c == 0) fmt::printf(" [.]")!;
+			if (c == 1) fmt::printf(" [#]")!;
+			for (let n: size = 0; n <= s; n += 1) {
+				const k = n * lm * 2 + m * 2 + c;
+				fmt::printf("   {}: {}", n, buf[k])!;
+			};
+			fmt::printf("\n")!;
+		};
+	};
+	const r_empty = buf[s * lm * 2 + len(map) * 2 + 0];
+	const r_full = buf[s * lm * 2 + len(map) * 2 + 1];
+	return r_empty + r_full;
 };
 
 export fn main() void = {
-	const part = 2;
+	const part = 1;
 	const source = os::open("example.txt")!;
 	const source = io::drain(source)!;
 	const source = strings::fromutf8(source)!;
@@ -94,7 +136,7 @@ export fn main() void = {
 
 		let result_i: u32 = 0;
 		if (part == 1) {
-			result_i = count_options(map, lens, '?');
+			result_i = count_options_dp(map, lens);
 		};
 
 		if (part == 2) {
@@ -117,10 +159,9 @@ export fn main() void = {
 				for (let j: size = 0; j < m; j += 1) {
 					lens5[m * k + j] = lens[j];
 				};
-				cnt[k] = count_options(
+				cnt[k] = count_options_dp(
 					map5[..(n + 1) * (k + 1) - 1],
 					lens5[..m * (k + 1)],
-					'?',
 				);
 				fmt::printf("{}: x {}: {}\n", i, k + 1, cnt[k])!;
 			};
