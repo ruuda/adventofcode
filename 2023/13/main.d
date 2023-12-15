@@ -86,7 +86,7 @@ ulong inspect_pattern_flips(char[][] data) {
 }
 
 void main() {
-  File file = File("example.txt", "r");
+  File file = File("input.txt", "r");
   ulong result1, result2 = 0;
 
   // Load the pattern into this array, one by one.
