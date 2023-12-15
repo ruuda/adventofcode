@@ -93,21 +93,24 @@ fn count_options_dp(map: []u8, lens: []u32) u32 = {
 		};
 	};
 
-	for (let m: size = 1; m <= len(map); m += 1) {
-		for (let c: size = 0; c < len(ends); c += 1) {
-			for (let i: size = 0; i < len(map); i += 1) {
-				if (i >= m) { fmt::printf("_")!; continue; };
-				if (map[i] == '.') fmt::printf(".")!;
-				if (map[i] == '#') fmt::printf("#")!;
-				if (map[i] == '?') fmt::printf("?")!;
+	const debug_print = false;
+	if (debug_print) {
+		for (let m: size = 1; m <= len(map); m += 1) {
+			for (let c: size = 0; c < len(ends); c += 1) {
+				for (let i: size = 0; i < len(map); i += 1) {
+					if (i >= m) { fmt::printf("_")!; continue; };
+					if (map[i] == '.') fmt::printf(".")!;
+					if (map[i] == '#') fmt::printf("#")!;
+					if (map[i] == '?') fmt::printf("?")!;
+				};
+				if (c == 0) fmt::printf(" [.]")!;
+				if (c == 1) fmt::printf(" [#]")!;
+				for (let n: size = 0; n <= s; n += 1) {
+					const k = n * lm * 2 + m * 2 + c;
+					fmt::printf("   {}: {}", n, buf[k])!;
+				};
+				fmt::printf("\n")!;
 			};
-			if (c == 0) fmt::printf(" [.]")!;
-			if (c == 1) fmt::printf(" [#]")!;
-			for (let n: size = 0; n <= s; n += 1) {
-				const k = n * lm * 2 + m * 2 + c;
-				fmt::printf("   {}: {}", n, buf[k])!;
-			};
-			fmt::printf("\n")!;
 		};
 	};
 	const r_empty = buf[s * lm * 2 + len(map) * 2 + 0];
@@ -116,7 +119,7 @@ fn count_options_dp(map: []u8, lens: []u32) u32 = {
 };
 
 export fn main() void = {
-	const part = 1;
+	const part = 2;
 	const source = os::open("example.txt")!;
 	const source = io::drain(source)!;
 	const source = strings::fromutf8(source)!;
