@@ -5,7 +5,7 @@ use os;
 use strings;
 use strconv;
 
-fn count_options_dp(map: []u8, lens: []u32) u32 = {
+fn count_options_dp(map: []u8, lens: []u32) u64 = {
 	// We take the dynamic programming approach to computing the number of
 	// possibilities. The buffer at location [n, m, c] holds the number of
 	// possibilities to fill the map up to length m, by spending n # chars
@@ -16,7 +16,7 @@ fn count_options_dp(map: []u8, lens: []u32) u32 = {
 		s += lens[i];
 	};
 	const lm = len(map) + 1;
-	let buf: []u32 = alloc([0xbadbeef...], (s + 1) * lm * 2);
+	let buf: []u64 = alloc([0xbadbeef...], (s + 1) * lm * 2);
 	defer free(buf);
 
 	const ends: [2]u8 = ['.', '#'];
@@ -119,12 +119,12 @@ fn count_options_dp(map: []u8, lens: []u32) u32 = {
 };
 
 export fn main() void = {
-	const part = 1;
-	const source = os::open("test.txt")!;
+	const part = 2;
+	const source = os::open("input.txt")!;
 	const source = io::drain(source)!;
 	const source = strings::fromutf8(source)!;
 	const lines: []str = strings::split(source, "\n");
-	let result: u32 = 0;
+	let result: u64 = 0;
 
 	for (let i: size = 0; i < len(lines); i += 1) {
 		if (lines[i] == "") continue;
@@ -137,7 +137,7 @@ export fn main() void = {
 			lens[j] = strconv::stou32(lenstrs[j])!;
 		};
 
-		let result_i: u32 = 0;
+		let result_i: u64 = 0;
 		if (part == 1) {
 			result_i = count_options_dp(map, lens);
 		};
