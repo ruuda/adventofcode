@@ -37,11 +37,7 @@ class Beam {
 }
 
 // Implementation of part 1.
-ulong count_energized(char[][] map) {
-  Beam start = new Beam;
-  start.x = 0;
-  start.y = 0;
-  start.dir = 1;
+ulong count_energized(char[][] map, Beam start) {
   Beam[] open = [start];
 
   // We maintain a parallel map about whether there is a beam incoming to a
@@ -142,23 +138,24 @@ ulong count_energized(char[][] map) {
   ulong result = 0;
   
   // Finally, we scan the map for locations that have a beam.
+  bool debug_print = false;
   foreach (byte[] beam_line; beams) {
     foreach (byte cell; beam_line) {
       if (cell > 0) {
         result += 1;
-        write("#");
+        if (debug_print) write("#");
       } else {
-        write(".");
+        if (debug_print) write(".");
       }
     }
-    writeln("");
+    if (debug_print) writeln("");
   }
 
   return result;
 }
 
 void main() {
-  File file = File("example.txt", "r");
+  File file = File("input.txt", "r");
 
   // Load the input into the 'map' array.
   char[][] map;
@@ -168,6 +165,44 @@ void main() {
     map ~= line;
   }
 
-  ulong part1 = count_energized(map);
+  Beam start1 = new Beam;
+  start1.x = 0;
+  start1.y = 0;
+  start1.dir = EAST;
+  ulong part1 = count_energized(map, start1);
   writeln("Part 1: ", part1);
+
+  // For part 2 we have to try all the start positions.
+  ulong part2 = 0;
+  for (int y = 0; y < map.length; y++) {
+    Beam b1 = new Beam;
+    b1.x = 0;
+    b1.y = y;
+    b1.dir = EAST;
+    ulong e1 = count_energized(map, b1);
+    part2 = e1 > part2 ? e1 : part2;
+
+    Beam b2 = new Beam;
+    b2.x = cast(int)(map[0].length - 1);
+    b2.y = y;
+    b2.dir = WEST;
+    ulong e2 = count_energized(map, b2);
+    part2 = e2 > part2 ? e2 : part2;
+  }
+  for (int x = 0; x < map[0].length; x++) {
+    Beam b1 = new Beam;
+    b1.x = x;
+    b1.y = 0;
+    b1.dir = SOUTH;
+    ulong e1 = count_energized(map, b1);
+    part2 = e1 > part2 ? e1 : part2;
+
+    Beam b2 = new Beam;
+    b2.x = x;
+    b2.y = cast(int)(map.length - 1);
+    b2.dir = NORTH;
+    ulong e2 = count_energized(map, b2);
+    part2 = e2 > part2 ? e2 : part2;
+  }
+  writeln("Part 2: ", part2);
 }
