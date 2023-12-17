@@ -1,0 +1,67 @@
+let map = [
+  for line in std.read_file_utf8("example.txt").split_lines():
+  [for char in line.split(""): if char != "": char.parse_int()]
+];
+
+let map_w = map[0].len();
+let map_h = map.len();
+
+let at_exit = node => (node.x == (map_w - 1)) and (node.y == (map_h - 1));
+
+let in_bounds = node => true
+  and (node.x >= 0)
+  and (node.x < map_w)
+  and (node.y >= 0)
+  and (node.y < map_h);
+
+let heat_loss = node => map[node.y][node.x];
+
+let crucible_part1 = { min_ahead = 0, max_ahead = 3 };
+let crucible_part2 = { min_ahead = 4, max_ahead = 10 };
+
+// Return the set of start nodes. The set is a set of [cost, node] tuples, where
+// lower cost is better.
+let start_nodes = crucible =>
+  let node = dir => {
+    x = 0,
+    y = 0,
+    dir = dir,
+    min_ahead = crucible.min_ahead,
+    max_ahead = crucible.max_ahead,
+    is_valid = true,
+  };
+  {[0, node("east")], [0, node("south")]};
+
+// All the directions we can go in from the given starting direction.
+let turns = {
+  east = ["south", "east", "north"],
+  north = ["east", "north", "west"],
+  west = ["north", "west", "south"],
+  south = ["west", "south", "east"],
+};
+let dx = { east = -1, west = 1 };
+let dy = { north = -1, south = 1 };
+
+// Make a step in the given direction from the node.
+let step = (crucible, node, dir) => 
+  let ahead = node.dir == dir;
+  let can_ahead = node.max_ahead > 0;
+  let can_turn = node.min_ahead <= 0;
+  {
+    x = node.x + dx.get(dir, 0),
+    y = node.y + dy.get(dir, 0),
+    dir = dir,
+    min_ahead = (if ahead then node else crucible).min_ahead - 1,
+    max_ahead = (if ahead then node else crucible).max_ahead - 1,
+    is_valid = if ahead then can_ahead else can_turn,
+  };
+
+// Take all valid steps from the given node.
+let steps = (crucible, node) => [
+  for new_dir in turns.get(node.dir, "TODO: Dict indexing."):
+  let new_node = step(crucible, node, new_dir);
+  if new_node.is_valid and in_bounds(node):
+  new_node
+];
+
+steps(crucible_part1, [for x in start_nodes(crucible_part1): x[1]][1])
