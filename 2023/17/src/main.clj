@@ -6,7 +6,7 @@
 
 (def field
   "The input map/field that we are pathfinding on."
-  (str/split-lines (slurp "input.txt")))
+  (str/split-lines (slurp "example.txt")))
 
 (def field-w (count (get field 0)))
 (def field-h (count field))
@@ -29,11 +29,14 @@
         ch (get (get field y) x)]
     (Character/digit ch 10)))
 
+(def crucible-part1 {:min-step 0 :max-step 3})
+(def crucible-part2 {:min-step 4 :max-step 10})
+
 (def start-nodes
   "We start in the top-left, moving east or south, with 3 steps before a forced turn."
   (priority-map/priority-map
-    {:x 0 :y 0 :dir :east :budget 3 :route []} 0
-    {:x 0 :y 0 :dir :south :budget 3 :route []} 0))
+    {:x 0 :y 0 :dir :east :budget 3} 0
+    {:x 0 :y 0 :dir :south :budget 3} 0))
 
 (defn turns [dir]
   "Return the two directions in which we can turn from `dir`."
@@ -52,8 +55,7 @@
      ; If we took a step in a different direction than we were going, the budget
      ; resets to 3 and we use 1, so we have 2 steps remaining. If we stepped in
      ; the same direction, just decrement the budget.
-     :budget (if (= dir (get node :dir)) (dec (get node :budget)) 2)
-     :route (cons {:x x :y y} (get node :route))}))
+     :budget (if (= dir (get node :dir)) (dec (get node :budget)) 2)}))
 
 (defn steps [node]
   "Return all steps that we can take from the current node."
@@ -67,22 +69,31 @@
                 (in-bounds? n)))
       new-nodes)))
 
+; If we use conj to insert into the priority queue, we might overwrite the
+; cost for a given node with a larger cost. This keeps the node with the lowest
+; cost instead.
+(defn conj-best [opens [node prio]]
+  (cond
+    (not (contains? opens node)) (conj opens [node prio])
+    (< (get opens node) prio) opens
+    :else (conj opens [node prio])))
+
 (def best-route-cost
   (loop
     [open start-nodes
      closed #{}]
     (let [[node cost] (peek open)
           new-open (pop open)
-          new-closed (conj closed (dissoc node :route))]
+          new-closed (conj closed node)]
       (cond
         ; If we are at the exit, the final result is the cost it took to reach it.
         (at-exit? node) cost
         ; Skip nodes that we visited before.
-        (contains? closed (dissoc node :route)) (recur new-open closed)
+        (contains? closed node) (recur new-open closed)
         :else
           (let [new-nodes (steps node)
                 add-opens (map (fn [n] [n (+ cost (heat-loss n))]) new-nodes)
-                new-open' (apply conj new-open add-opens)]
+                new-open' (reduce conj-best new-open add-opens)]
             (recur new-open' new-closed))))))
 
 (defn run [opts]
