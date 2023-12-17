@@ -29,7 +29,7 @@
         devShells.${system}.default = pkgs.mkShell {
           name = "aoc2023";
           nativeBuildInputs = [
-            pkgs.clang
+            pkgs.clojure
             pkgs.dmd
             pkgs.fsharp
             pkgs.ghc
