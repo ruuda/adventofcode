@@ -14,37 +14,41 @@ Languages used as of 2023 day 15, as computed by `languages.sh`:
 
 ```
 Language   %Used   %Cumulative   Files   Lines   Allowed Next
-Pony        12.0          12.0       4     565   [ ]
-Haskell     10.3          22.3       7     485   [ ]
-Python       8.6          30.9      10     405   [ ]
-C            8.3          39.2       2     390   [ ]
-Rust         8.0          47.2       5     378   [ ]
-Zig          8.0          55.2       3     376   [ ]
-Go           7.3          62.5       3     342   [x]
-Nim          6.5          69.0       4     306   [x]
-AWK          6.0          75.0      10     283   [x]
-Nix          5.0          80.0       5     236   [x]
-D            4.5          84.6       2     214   [x]
-RCL          3.9          88.5       4     184   [x]
-Hare         3.8          92.3       2     179   [x]
-OCaml        3.1          95.4       2     144   [x]
-SQL          1.9          97.3       1      90   [x]
-Unison       0.9          98.2       1      41   [x]
+Pony        11.4          11.4       4     565   [ ]
+Haskell      9.8          21.1       7     485   [ ]
+Python       8.1          29.3      10     405   [ ]
+C            7.8          37.1       2     390   [ ]
+D            7.8          44.9       3     388   [ ]
+Rust         7.6          52.5       5     378   [ ]
+Zig          7.6          60.1       3     376   [x]
+Go           6.9          66.9       3     342   [x]
+Nim          6.2          73.1       4     306   [x]
+AWK          5.7          78.8      10     283   [x]
+Nix          4.7          83.5       5     236   [x]
+RCL          3.7          87.2       4     184   [x]
+Hare         3.6          90.8       2     179   [x]
+OCaml        2.9          93.7       2     144   [x]
+Clojure      1.8          95.6       1      92   [x]
+SQL          1.8          97.4       1      90   [x]
+Unison       0.8          98.2       1      41   [x]
 Shell        0.7          98.9       1      34   [x]
-Racket       0.7          99.6       1      32   [x]
+Racket       0.6          99.5       1      32   [x]
 Scheme       0.4         100.0       1      21   [x]
+Edn          0.0         100.0       1       2   [x]
 ```
 
 Some languages that I still want to try:
 
- * [ ] Clojure
+ * [x] Clojure
  * [x] D
  * [ ] F#
  * [ ] Guile, Racket
  * [x] Hare
  * [ ] Hoon
+ * [ ] Idris
  * [x] Nim
  * [x] OCaml
+ * [x] Pony
  * [ ] Prolog
  * [x] Zig
 
