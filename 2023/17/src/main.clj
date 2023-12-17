@@ -6,7 +6,7 @@
 
 (def field
   "The input map/field that we are pathfinding on."
-  (str/split-lines (slurp "example.txt")))
+  (str/split-lines (slurp "input.txt")))
 
 (def field-w (count (get field 0)))
 (def field-h (count field))
@@ -29,14 +29,24 @@
         ch (get (get field y) x)]
     (Character/digit ch 10)))
 
-(def crucible-part1 {:min-step 0 :max-step 3})
-(def crucible-part2 {:min-step 4 :max-step 10})
+(def crucible-part1 {:min-ahead 0 :max-ahead 3})
+(def crucible-part2 {:min-ahead 4 :max-ahead 10})
 
-(def start-nodes
+(defn start-nodes [crucible]
   "We start in the top-left, moving east or south, with 3 steps before a forced turn."
   (priority-map/priority-map
-    {:x 0 :y 0 :dir :east :budget 3} 0
-    {:x 0 :y 0 :dir :south :budget 3} 0))
+    {:x 0
+     :y 0
+     :dir :east
+     :max-ahead (get crucible :max-ahead)
+     :min-ahead (get crucible :min-ahead)
+     :is-valid? true} 0
+    {:x 0
+     :y 0
+     :dir :south
+     :max-ahead (get crucible :max-ahead)
+     :min-ahead (get crucible :min-ahead)
+     :is-valid? true} 0))
 
 (defn turns [dir]
   "Return the two directions in which we can turn from `dir`."
@@ -46,28 +56,28 @@
     (= :west dir) #{:north :south}
     (= :east dir) #{:north :south}))
 
-(defn step [dir node]
+(defn step [crucible dir node]
   "Adjust :x and :y to take a step in the given direction."
-  (let [x (get node :x) y (get node :y)]
+  (let
+    [x (get node :x)
+     y (get node :y)
+     ahead (= dir (get node :dir))
+     can-ahead (> (get node :max-ahead) 0)
+     can-turn (<= (get node :min-ahead) 0)]
     {:x (cond (= :east dir) (inc x) (= :west dir) (dec x) :else x)
      :y (cond (= :north dir) (dec y) (= :south dir) (inc y) :else y)
      :dir dir
-     ; If we took a step in a different direction than we were going, the budget
-     ; resets to 3 and we use 1, so we have 2 steps remaining. If we stepped in
-     ; the same direction, just decrement the budget.
-     :budget (if (= dir (get node :dir)) (dec (get node :budget)) 2)}))
+     :min-ahead (dec (get (if ahead node crucible) :min-ahead))
+     :max-ahead (dec (get (if ahead node crucible) :max-ahead))
+     :is-valid? (if ahead can-ahead can-turn)}))
 
-(defn steps [node]
+(defn steps [crucible node]
   "Return all steps that we can take from the current node."
   (let
     [dir (get node :dir)
      new-dirs (conj (turns dir) dir)
-     new-nodes (map (fn [d] (step d node)) new-dirs)]
-    (filter
-      (fn [n] (and
-                (>= (get n :budget) 0)
-                (in-bounds? n)))
-      new-nodes)))
+     new-nodes (map (fn [d] (step crucible d node)) new-dirs)]
+    (filter (fn [n] (and (get n :is-valid?) (in-bounds? n))) new-nodes)))
 
 ; If we use conj to insert into the priority queue, we might overwrite the
 ; cost for a given node with a larger cost. This keeps the node with the lowest
@@ -78,9 +88,9 @@
     (< (get opens node) prio) opens
     :else (conj opens [node prio])))
 
-(def best-route-cost
+(defn best-route-cost [crucible]
   (loop
-    [open start-nodes
+    [open (start-nodes crucible)
      closed #{}]
     (let [[node cost] (peek open)
           new-open (pop open)
@@ -91,10 +101,11 @@
         ; Skip nodes that we visited before.
         (contains? closed node) (recur new-open closed)
         :else
-          (let [new-nodes (steps node)
+          (let [new-nodes (steps crucible node)
                 add-opens (map (fn [n] [n (+ cost (heat-loss n))]) new-nodes)
                 new-open' (reduce conj-best new-open add-opens)]
             (recur new-open' new-closed))))))
 
 (defn run [opts]
-  (println "Part 1:" best-route-cost))
+  (println "Part 1:" (best-route-cost crucible-part1))
+  (println "Part 2:" (best-route-cost crucible-part2)))
