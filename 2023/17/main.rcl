@@ -16,8 +16,10 @@ let in_bounds = node => true
 
 let heat_loss = node => map[node.y][node.x];
 
-let crucible_part1 = { min_ahead = 0, max_ahead = 3 };
-let crucible_part2 = { min_ahead = 4, max_ahead = 10 };
+let crucibles = {
+  part1 = { min_ahead = 0, max_ahead = 3 },
+  part2 = { min_ahead = 4, max_ahead = 10 },
+};
 
 // Return the set of start nodes. The set is a set of [cost, node] tuples, where
 // lower cost is better.
@@ -64,4 +66,47 @@ let steps = (crucible, node) => [
   new_node
 ];
 
-steps(crucible_part1, [for x in start_nodes(crucible_part1): x[1]][1])
+// Hack to treat a set as a priority queue and pop the front element. This
+// relies on the implementation detail that sets are b-tree sets and therefore
+// sorted, and the plan is to change that in RCL, so this is fragile. TODO.
+let pop_front = xs =>
+  let xs_list = [for x in xs: x];
+  {
+    head = xs_list[0],
+    tail = {for i in std.range(1, xs.len()): xs_list[i]},
+  };
+
+let best_route_cost = crucible =>
+  let route_rec = (self, open, closed) =>
+    let pop = pop_front(open);
+    // The open set contains tuples of [cost, node].
+    let cost = pop.head[0];
+    let node = pop.head[1];
+    let new_open = pop.tail;
+
+    // If we are at the exit, then the cost so far is the final cost.
+    if at_exit(node)
+    then cost else
+
+    // If we've visited this node already, then recur with the new opens.
+    if closed.contains(node)
+    then self(self, new_open, closed) else
+
+    // Finally, explore all possible steps from here.
+    let new_closed = {node, for n in closed: n};
+    let new_open = {
+      for n in steps(crucible, node): [cost + heat_loss(n), n],
+      for x in open: x,
+    };
+    self(self, new_open, new_closed);
+
+  let empty_set = {for x in []: x};
+  // TODO: So it fails with a stack overflow ... Adding tail calls to RCL is not
+  // really what I want because code golfing is a fringe use case and recursive
+  // functions should be exceedingly rare in real-world use cases.
+  route_rec(route_rec, start_nodes(crucible), empty_set);
+
+{
+  for part, crucible in crucibles:
+  part: best_route_cost(crucible)
+}
