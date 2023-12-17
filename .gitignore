@@ -1,5 +1,6 @@
 *.cmi
 *.cmx
+.cpcache/
 input.txt
 main
 main.o
