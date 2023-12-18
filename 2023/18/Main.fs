@@ -54,18 +54,27 @@ let neighbors: Coord -> Coord list =
     ]
 
 let walkOutline: Move list -> Coord Set = fun moves ->
+  // Append to the result n steps in direction dir from positition c,
+  // excluding c itself. I thought this may be more efficient than the recursive
+  // approach that takes one step at a time, but it looks like it's not ...
+  let rec movesDir = fun dir n c res ->
+    match n with
+      | 0 -> (c, res)
+      | _ ->
+          let c' = moveDir dir c;
+          movesDir dir (n - 1) c' (Set.add c' res)
+
   let rec f = fun movesLeft at res ->
     match movesLeft with
       | { direction = dir; distance = 0; color = _ } :: tail ->
-          printfn "Frontier length: %i" (Set.count res);
+          printfn "xxFrontier length: %i" (Set.count res);
           f tail at res
       | { direction = d; distance = n; color = c } :: tail ->
-          let pos = moveDir d at;
-          f
-            ({direction = d; distance = (n - 1); color = c} :: tail)
-            pos
-            (Set.add pos res)
+          printfn "Frontier length: %i" (Set.count res);
+          let (at', res') = movesDir d n at res;
+          f tail at' res'
       | [] -> res
+
   f moves (Coord(0, 0)) Set.empty
 
 let floodFill : Coord Set -> Coord Set -> uint64 =
