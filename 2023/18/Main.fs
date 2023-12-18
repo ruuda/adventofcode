@@ -67,6 +67,34 @@ let rec floodFill: Coord Set -> Coord Set -> Coord Set =
         printfn "Recurse, opens: %i, closed: %i" (Set.count opens') (Set.count closed');
       floodFill opens' closed'
 
+let floodFill2 : Coord Set -> Coord Set -> uint64 =
+  fun boundary frontier ->
+    let rec step : Coord Set -> Coord Set -> uint64 -> uint64 =
+      fun prevFrontier currFrontier count ->
+        if Set.isEmpty currFrontier then count else
+          // Compute the entire new frontier in one go. The frontier consists of all
+          // neighbors of the current frontier, that do not lie on the boundary, and
+          // that do not lie on the current or previous frontier. Any frontiers
+          // further back we don't need to care about, because they are entirely
+          // enclosed by the current frontier.
+          let nextFrontier =
+            seq {
+              for c0 in currFrontier do
+                for coord in neighbors c0 do
+                  if not (Set.contains coord boundary) then
+                    if not (Set.contains coord currFrontier) then
+                      if not (Set.contains coord prevFrontier) then
+                        coord
+            }
+          let currCount = uint64 (Set.count currFrontier);
+          printfn "Step: frontier %i, count: %i" (Set.count currFrontier) count;
+          step currFrontier (Set.ofSeq nextFrontier) (count + currCount)
+
+    // Initiate the recursion with an empty previous frontier, whatever frontier
+    // the caller seeds us with, and the count is 0 + the size of the boundary,
+    // because the boundary is included.
+    step Set.empty frontier (uint64 (Set.count boundary))
+
 let solve =
   let moves = readFile "input.txt"
   let outlineSeq = walkOutline (List.ofSeq moves);
@@ -87,12 +115,13 @@ let solve =
   let start = Set.minElement (Set.difference startCandidates outlineSet);
   printfn "Start cell is %i, %i" start.x start.y;
 
+  let fill2 = floodFill2 outlineSet (Set.singleton start);
   let fill = floodFill (Set.singleton start) outlineSet;
   // for move in moves do
   //   printfn "Move %c %i %s" move.direction move.distance move.color
   // for coord in outline do
   //   printfn "Outline (%i %i)" coord.x coord.y
-  printfn "Fill covers %i squares" (Set.count fill)
+  printfn "Fill covers %i squares (1) %i (2)" (Set.count fill) fill2
 
 [<EntryPoint>]
 let main args =
