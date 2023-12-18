@@ -6,7 +6,7 @@
 # using new languages or languages that are in the bottom 50%.
 
 tokei \
-  --exclude '{*.txt,*.md,Makefile}' \
+  --exclude '{*.txt,*.md,Makefile,*.edn,*.fsproj,languages.sh,flake.nix}' \
   --compact \
   --rsort code \
   . \
@@ -15,7 +15,7 @@ tokei \
   $1 == "Total" {
     total = $4
     cumulative = 0
-    print("Language,%Used,%Cumulative,Files,Lines,Allowed Next")
+    print("Next,Language,%Used,%Cumulative,Files,Lines")
   }
   $4 ~ /[0-9]+/ && $1 != "Total" {
     fraction = $4 / total
@@ -23,19 +23,19 @@ tokei \
     decision = cumulative / total <= 0.5 ? "[ ]" : "[x]"
     color = cumulative / total <= 0.5 ? "31" : "32"
     if ($1 == "Headache") $1 = "Hare";
-    printf("\x1b[%sm%s,%5.1f,%5.1f,%d,%d,%s\x1b[0m\n",
+    printf("\x1b[%sm%s,%s,%5.1f,%5.1f,%d,%d\x1b[0m\n",
       color,
+      decision,
       $1,
       fraction * 100.0,
       cumfraction * 100.0,
       $2,
-      $4,
-      decision)
+      $4)
     cumulative += $4
   }
   ' \
   | column \
   --table \
-  --table-right 2,3,4,5 \
+  --table-right 3,4,5,6 \
   --output-separator '   ' \
   --separator ,

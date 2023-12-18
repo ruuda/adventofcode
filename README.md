@@ -13,35 +13,34 @@ solution must be written in either:
 Languages used as of 2023 day 15, as computed by `languages.sh`:
 
 ```
-Language   %Used   %Cumulative   Files   Lines   Allowed Next
-Pony        11.4          11.4       4     565   [ ]
-Haskell      9.8          21.1       7     485   [ ]
-Python       8.1          29.3      10     405   [ ]
-C            7.8          37.1       2     390   [ ]
-D            7.8          44.9       3     388   [ ]
-Rust         7.6          52.5       5     378   [ ]
-Zig          7.6          60.1       3     376   [x]
-Go           6.9          66.9       3     342   [x]
-Nim          6.2          73.1       4     306   [x]
-AWK          5.7          78.8      10     283   [x]
-Nix          4.7          83.5       5     236   [x]
-RCL          3.7          87.2       4     184   [x]
-Hare         3.6          90.8       2     179   [x]
-OCaml        2.9          93.7       2     144   [x]
-Clojure      1.8          95.6       1      92   [x]
-SQL          1.8          97.4       1      90   [x]
-Unison       0.8          98.2       1      41   [x]
-Shell        0.7          98.9       1      34   [x]
-Racket       0.6          99.5       1      32   [x]
-Scheme       0.4         100.0       1      21   [x]
-Edn          0.0         100.0       1       2   [x]
+Next   Language   %Used   %Cumulative   Files   Lines
+[ ]    Pony        11.2          11.2       4     565
+[ ]    Haskell      9.6          20.8       7     485
+[ ]    Python       8.0          28.8      10     405
+[ ]    C            7.7          36.5       2     390
+[ ]    D            7.7          44.2       3     388
+[ ]    Rust         7.5          51.7       5     378
+[x]    Zig          7.4          59.1       3     376
+[x]    Go           6.8          65.9       3     342
+[x]    Nim          6.1          71.9       4     306
+[x]    AWK          5.6          77.5      10     283
+[x]    RCL          5.2          82.8       5     265
+[x]    Hare         3.5          86.3       2     179
+[x]    Nix          3.2          89.6       3     164
+[x]    OCaml        2.8          92.4       2     144
+[x]    F#           2.1          94.5       1     107
+[x]    Clojure      1.8          96.4       1      92
+[x]    SQL          1.8          98.1       1      90
+[x]    Unison       0.8          99.0       1      41
+[x]    Racket       0.6          99.6       1      32
+[x]    Scheme       0.4         100.0       1      21
 ```
 
 Some languages that I still want to try:
 
  * [x] Clojure
  * [x] D
- * [ ] F#
+ * [x] F#
  * [ ] Guile, Racket
  * [x] Hare
  * [ ] Hoon
