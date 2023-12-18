@@ -54,8 +54,15 @@ let rec floodFill: Coord Set -> Coord Set -> Coord Set =
     if Set.isEmpty opens then closed else
       let coord = Set.minElement opens;
       let closed' = Set.add coord closed;
-      let newOpen = Set.ofList (neighbors coord);
-      let opens' = Set.union (Set.remove coord opens) (Set.difference newOpen closed);
+      let isNotClosed = fun c -> not (Set.contains c closed);
+      // Note, previously I expressed this with set union and difference, which
+      // is maybe a bit more elegant and obvious, but which was also slow. Now
+      // we do the minimal number of single-element modifications, and that is
+      // *much* faster.
+      let opens' =
+        neighbors coord
+        |> Seq.filter isNotClosed
+        |> Seq.fold (fun acc c -> Set.add c acc) (Set.remove coord opens);
       if (Set.count opens') <> (Set.count opens) then
         printfn "Recurse, opens: %i, closed: %i" (Set.count opens') (Set.count closed');
       floodFill opens' closed'
