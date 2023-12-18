@@ -1,6 +1,11 @@
+.cpcache/
+bin/
+obj/
+
 *.cmi
 *.cmx
-.cpcache/
+*.exe
+
 input.txt
 main
 main.o

@@ -1,4 +1,8 @@
-#!/usr/bin/env -S dotnet fsi
+// Execute by running `dotnet run` in this directory. Optionally pass
+// `--configuration Release`, but it doesn't make an observable difference
+// to me from eyeballing the speed. Alternatively, run `dotnet fsi Main.fs`,
+// but replace the `main` entry point with just a call to `solve` then.
+module Main
 
 open System
 
@@ -11,7 +15,7 @@ let readFile: String -> Move seq = fun fname ->
   Seq.map
     (fun (line: String) ->
       let [dir; dist; color] = line.Split(" ") |> List.ofArray;
-      { Move.direction = dir[0]; distance = int dist; color = color }
+      { Move.direction = dir.[0]; distance = int dist; color = color }
     )
     (readLines fname)
 
@@ -22,12 +26,13 @@ let moveDir: Char -> Coord -> Coord = fun dir coord ->
     | 'L' -> { x = coord.x - 1; y = coord.y }
     | 'R' -> { x = coord.x + 1; y = coord.y }
 
-let neighbors: Coord -> Coord list = fun coord -> [
-  { x = coord.x + 1; y = coord.y }
-  { x = coord.x - 1; y = coord.y }
-  { x = coord.x; y = coord.y + 1 }
-  { x = coord.x; y = coord.y - 1 }
-]
+let neighbors: Coord -> Coord list =
+  fun coord ->
+    [ { x = coord.x + 1; y = coord.y }
+      { x = coord.x - 1; y = coord.y }
+      { x = coord.x; y = coord.y + 1 }
+      { x = coord.x; y = coord.y - 1 }
+    ]
 
 let walkOutline: Move list -> Coord list = fun moves ->
   let rec f = fun movesLeft at ->
@@ -50,7 +55,7 @@ let rec floodFill: Coord Set -> Coord Set -> Coord Set =
         printfn "Recurse, opens: %i, closed: %i" (Set.count opens') (Set.count closed');
       floodFill opens' closed'
 
-let main =
+let solve =
   let moves = readFile "input.txt"
   let outlineSeq = walkOutline (List.ofSeq moves);
   let lastCell = List.head outlineSeq;
@@ -77,4 +82,7 @@ let main =
   //   printfn "Outline (%i %i)" coord.x coord.y
   printfn "Fill covers %i squares" (Set.count fill)
 
-main 
+[<EntryPoint>]
+let main args =
+  solve
+  0
