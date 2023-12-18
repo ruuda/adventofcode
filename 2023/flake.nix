@@ -32,13 +32,13 @@
             pkgs.clojure
             pkgs.dmd
             pkgs.fsharp
-            pkgs.ghc
+            pkgs.dotnet-sdk_8
+            pkgs.mono
             pkgs.go
             pkgs.hare
             pkgs.nim
             pkgs.ocaml-ng.ocamlPackages_5_1.ocaml
             pkgs.ocaml-ng.ocamlPackages_5_1.ocamlformat
-            pkgs.ponyc
             pkgs.python3
             pkgs.rustc
             pkgs.zig
@@ -46,6 +46,7 @@
             tokei
           ];
           LOCALE_ARCHIVE = "${pkgs.glibcLocales}/lib/locale/locale-archive";
+          DOTNET_ROOT = "${pkgs.dotnet-sdk_8}";
         };
       };
 }
