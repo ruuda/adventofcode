@@ -49,25 +49,7 @@ let walkOutline: Move list -> Coord list = fun moves ->
       | [] -> []
   f moves (Coord(0, 0))
 
-let rec floodFill: Coord Set -> Coord Set -> Coord Set =
-  fun opens closed ->
-    if Set.isEmpty opens then closed else
-      let coord = Set.minElement opens;
-      let closed' = Set.add coord closed;
-      let isNotClosed = fun c -> not (Set.contains c closed);
-      // Note, previously I expressed this with set union and difference, which
-      // is maybe a bit more elegant and obvious, but which was also slow. Now
-      // we do the minimal number of single-element modifications, and that is
-      // *much* faster.
-      let opens' =
-        neighbors coord
-        |> Seq.filter isNotClosed
-        |> Seq.fold (fun acc c -> Set.add c acc) (Set.remove coord opens);
-      if (Set.count opens') <> (Set.count opens) then
-        printfn "Recurse, opens: %i, closed: %i" (Set.count opens') (Set.count closed');
-      floodFill opens' closed'
-
-let floodFill2 : Coord Set -> Coord Set -> uint64 =
+let floodFill : Coord Set -> Coord Set -> uint64 =
   fun boundary frontier ->
     let rec step : Coord Set -> Coord Set -> uint64 -> uint64 =
       fun prevFrontier currFrontier count ->
@@ -115,13 +97,8 @@ let solve =
   let start = Set.minElement (Set.difference startCandidates outlineSet);
   printfn "Start cell is %i, %i" start.x start.y;
 
-  let fill2 = floodFill2 outlineSet (Set.singleton start);
-  let fill = floodFill (Set.singleton start) outlineSet;
-  // for move in moves do
-  //   printfn "Move %c %i %s" move.direction move.distance move.color
-  // for coord in outline do
-  //   printfn "Outline (%i %i)" coord.x coord.y
-  printfn "Fill covers %i squares (1) %i (2)" (Set.count fill) fill2
+  let fill = floodFill outlineSet (Set.singleton start);
+  printfn "Part 1: Fill covers %i squares." fill
 
 [<EntryPoint>]
 let main args =
