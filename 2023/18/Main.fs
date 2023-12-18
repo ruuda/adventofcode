@@ -9,7 +9,12 @@ open System
 let readLines filePath = System.IO.File.ReadLines(filePath)
 
 type Move = { direction: Char; distance: Int32; color: String }
-type Coord = { x: Int32; y: Int32 }
+type Coord =
+  struct
+    val x: int
+    val y: int
+    new (x, y) = { x = x; y = y }
+  end
 
 let readFile: String -> Move seq = fun fname ->
   Seq.map
@@ -21,17 +26,17 @@ let readFile: String -> Move seq = fun fname ->
 
 let moveDir: Char -> Coord -> Coord = fun dir coord ->
   match dir with
-    | 'U' -> { x = coord.x; y = coord.y - 1 }
-    | 'D' -> { x = coord.x; y = coord.y + 1 }
-    | 'L' -> { x = coord.x - 1; y = coord.y }
-    | 'R' -> { x = coord.x + 1; y = coord.y }
+    | 'U' -> Coord(coord.x, coord.y - 1)
+    | 'D' -> Coord(coord.x, coord.y + 1)
+    | 'L' -> Coord(coord.x - 1, coord.y)
+    | 'R' -> Coord(coord.x + 1, coord.y)
 
 let neighbors: Coord -> Coord list =
   fun coord ->
-    [ { x = coord.x + 1; y = coord.y }
-      { x = coord.x - 1; y = coord.y }
-      { x = coord.x; y = coord.y + 1 }
-      { x = coord.x; y = coord.y - 1 }
+    [ Coord(coord.x + 1, coord.y)
+      Coord(coord.x - 1, coord.y)
+      Coord(coord.x, coord.y + 1)
+      Coord(coord.x, coord.y - 1)
     ]
 
 let walkOutline: Move list -> Coord list = fun moves ->
@@ -42,7 +47,7 @@ let walkOutline: Move list -> Coord list = fun moves ->
           let pos = moveDir d at;
           pos :: f ({direction = d; distance = (n - 1); color = c} :: tail) pos
       | [] -> []
-  f moves { x = 0; y = 0 }
+  f moves (Coord(0, 0))
 
 let rec floodFill: Coord Set -> Coord Set -> Coord Set =
   fun opens closed ->
@@ -68,9 +73,9 @@ let solve =
   let topLeft = Set.minElement outlineSet;
   let startCandidates =
     Set.ofSeq [
-      { x = topLeft.x + 1; y = topLeft.y }
-      { x = topLeft.x + 1; y = topLeft.y + 1 }
-      { x = topLeft.x; y = topLeft.y + 1 }
+      Coord(topLeft.x + 1, topLeft.y)
+      Coord(topLeft.x + 1, topLeft.y + 1)
+      Coord(topLeft.x, topLeft.y + 1)
     ];
   let start = Set.minElement (Set.difference startCandidates outlineSet);
   printfn "Start cell is %i, %i" start.x start.y;
