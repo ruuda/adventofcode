@@ -18,6 +18,14 @@ type
   Part = object
     x, m, a, s: int
 
+func getProp(part: Part, prop: char): int =
+  return case prop:
+    of 'x': part.x
+    of 'm': part.m
+    of 'a': part.a
+    of 's': part.s
+    else: raise newException(Defect, "Unexpected property.")
+
 proc parseWorkflow(line: string, workflows: var Table[string, Workflow]) =
   var wf: Workflow
   var name: string
@@ -41,18 +49,41 @@ proc parseWorkflow(line: string, workflows: var Table[string, Workflow]) =
       workflows[name] = wf
       break
 
-proc parsePart(line: string): Part =
+func parsePart(line: string): Part =
   var x, m, a, s: int
   if not scanf(line, "{x=$i,m=$i,a=$i,s=$i}", x, m, a, s):
       raise newException(Defect, "Unexpected input.")
   return Part(x: x, m: m, a: a, s: s)
+
+func evalPart(part: Part, workflows: Table[string, Workflow]): uint64 =
+  var loc = "in"
+  while true:
+    if loc == "A":
+      return uint64(part.x + part.m + part.a + part.s)
+    if loc == "R":
+      return 0
+
+    var wf = workflows[loc]
+    var ok = false
+    for rule in wf.rules:
+      var p = part.getProp(rule.prop)
+      ok = case rule.cond:
+        of '<': p < rule.rhs
+        of '>': p > rule.rhs
+        else: raise newException(Defect, "Unexpected condition.")
+      if ok:
+        loc = rule.next
+        break
+
+    if not ok:
+      loc = wf.final
 
 var workflows = initTable[string, Workflow]()
 var parts: seq[Part] = @[]
 
 # We begin parsing workflows.
 var mode = 'W'
-for line in "example.txt".lines:
+for line in "input.txt".lines:
   if mode == 'W':
     if line == "":
       mode = 'P'
@@ -70,3 +101,8 @@ for name, wf in workflows:
     echo fmt"  {rule.prop} {rule.cond} {rule.rhs}: jmp {rule.next}"
   echo fmt"  else: jmp {wf.final}"
 
+var part1Answer: uint64 = 0
+for part in parts:
+  part1Answer += part.evalPart(workflows)
+
+echo fmt"Part 1: {part1Answer}"
