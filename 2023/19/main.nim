@@ -86,6 +86,12 @@ func isEmpty(r: PartRange): bool =
 func `$`(r: PartRange): string =
   fmt"[{r.lower[0]:4}..{r.upper[0]:4} x  {r.lower[1]:4}..{r.upper[1]:4} m  {r.lower[2]:4}..{r.upper[2]:4} a  {r.lower[3]:4}..{r.upper[3]:4} s]"
 
+func size(r: PartRange): uint64 =
+  var res: uint64 = 1
+  for i in [0, 1, 2, 3]:
+    res = res * uint64(r.upper[i] - r.lower[i])
+  return res
+
 proc parseWorkflow(line: string, workflows: var Table[string, Workflow]) =
   var wf: Workflow
   var name: string
@@ -176,17 +182,19 @@ proc solveSymbolic(edges: Table[string, seq[Edge]]): uint64 =
     open = newOpen
 
   echo "All input ranges:"
+  var res: uint64 = 0
   for r in inputs:
     echo r
+    res += r.size
 
-  return uint64(inputs.len)
+  return res
 
 var workflows = initTable[string, Workflow]()
 var parts: seq[Part] = @[]
 
 # We begin parsing workflows.
 var mode = 'W'
-for line in "example.txt".lines:
+for line in "input.txt".lines:
   if mode == 'W':
     if line == "":
       mode = 'P'
@@ -216,4 +224,5 @@ for dst, srcs in edges:
   for src in srcs:
     echo fmt"{dst:5} <--[ {src.prop} {src.cond} {src.rhs:4} ]-- {src.src}"
 
-var r = solveSymbolic(edges)
+var part2Answer = solveSymbolic(edges)
+echo fmt"Part 2: {part2Answer}"
