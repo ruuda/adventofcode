@@ -1,7 +1,7 @@
-import std/sequtils
+import std/enumerate
+import std/strformat
 import std/strscans
 import std/strutils
-import std/strformat
 import std/tables
 
 type
@@ -18,6 +18,20 @@ type
   Part = object
     x, m, a, s: int
 
+  PartRange = object
+    # All XMAS part ratings in the range satisfy >= lower.
+    lower: array[4, int]
+    # All XMAS part ratings in the range satisfy < upper.
+    upper: array[4, int]
+
+  # For part 2, an edge incoming to a node, with where it came from, and the
+  # condition that needs to hold to traverse the edge.
+  Edge = object
+    prop: char
+    cond: char
+    rhs: int
+    src: string
+
 func getProp(part: Part, prop: char): int =
   return case prop:
     of 'x': part.x
@@ -25,6 +39,52 @@ func getProp(part: Part, prop: char): int =
     of 'a': part.a
     of 's': part.s
     else: raise newException(Defect, "Unexpected property.")
+
+func flip(r: Rule): Rule =
+  if r.cond == '>':
+    Rule(prop: r.prop, cond: '<', rhs: r.rhs + 1, next: r.next)
+  else:
+    Rule(prop: r.prop, cond: '>', rhs: r.rhs - 1, next: r.next)
+
+# Cut the range in half as specified by the edge, return the half that satisfies
+# the condition.
+func cut(r: PartRange, edge: Edge): PartRange =
+  var i = case edge.prop:
+    of 'x': 0
+    of 'm': 1
+    of 'a': 2
+    of 's': 3
+    else: raise newException(Defect, "Unexpected property.")
+
+  if edge.cond == '>':
+    var k = [0, 0, 0, 0]
+    k[i] = edge.rhs + 1
+    var lower = [
+      max(k[0], r.lower[0]),
+      max(k[1], r.lower[1]),
+      max(k[2], r.lower[2]),
+      max(k[3], r.lower[3]),
+    ]
+    return PartRange(lower: lower, upper: r.upper)
+  else:
+    var k = [4001, 4001, 4001, 4001]
+    k[i] = edge.rhs
+    var upper = [
+      min(k[0], r.upper[0]),
+      min(k[1], r.upper[1]),
+      min(k[2], r.upper[2]),
+      min(k[3], r.upper[3]),
+    ]
+    return PartRange(lower: r.lower, upper: upper)
+
+func isEmpty(r: PartRange): bool =
+  for i in [0, 1, 2, 3]:
+    if r.lower[i] >= r.upper[i]:
+      return true
+  return false
+
+func `$`(r: PartRange): string =
+  fmt"[{r.lower[0]:4}..{r.upper[0]:4} x  {r.lower[1]:4}..{r.upper[1]:4} m  {r.lower[2]:4}..{r.upper[2]:4} a  {r.lower[3]:4}..{r.upper[3]:4} s]"
 
 proc parseWorkflow(line: string, workflows: var Table[string, Workflow]) =
   var wf: Workflow
@@ -78,12 +138,55 @@ func evalPart(part: Part, workflows: Table[string, Workflow]): uint64 =
     if not ok:
       loc = wf.final
 
+func collectEdges(workflows: Table[string, Workflow]): Table[string, seq[Edge]] =
+  var edges = initTable[string, seq[Edge]]()
+  for src_base, wf in workflows:
+    for (i, rule) in enumerate(wf.rules):
+      var src = fmt"{src_base}{i}"
+      var dst_t = fmt"{rule.next}0"
+      var dst_f = if i + 1 == wf.rules.len: fmt"{wf.final}0" else: fmt"{src_base}{i+1}"
+      var rule_f = rule.flip
+      var edge_t = Edge(prop: rule.prop, cond: rule.cond, rhs: rule.rhs, src: src)
+      var edge_f = Edge(prop: rule.prop, cond: rule_f.cond, rhs: rule_f.rhs, src: src)
+      edges.mgetOrPut(dst_t, @[]).add(edge_t)
+      edges.mgetOrPut(dst_f, @[]).add(edge_f)
+  return edges
+
+proc solveSymbolic(edges: Table[string, seq[Edge]]): uint64 =
+  var open = initTable[string, seq[PartRange]]()
+  var inputs: seq[PartRange] = @[]
+  var full = PartRange(lower: [1, 1, 1, 1], upper: [4001, 4001, 4001, 4001])
+  open["A0"] = @[full]
+
+  while open.len > 0:
+    var newOpen = initTable[string, seq[PartRange]]()
+    for node, states in open:
+      if node == "in0":
+        inputs.add(open["in0"])
+        continue
+
+      echo fmt"{node}:"
+      for inEdge in edges[node]:
+        for outState in states:
+          var inState = outState.cut(inEdge)
+          echo fmt"  <- {inState} [{inEdge.src}]"
+          if not inState.isEmpty:
+            newOpen.mgetOrPut(inEdge.src, @[]).add(inState)
+
+    open = newOpen
+
+  echo "All input ranges:"
+  for r in inputs:
+    echo r
+
+  return uint64(inputs.len)
+
 var workflows = initTable[string, Workflow]()
 var parts: seq[Part] = @[]
 
 # We begin parsing workflows.
 var mode = 'W'
-for line in "input.txt".lines:
+for line in "example.txt".lines:
   if mode == 'W':
     if line == "":
       mode = 'P'
@@ -95,14 +198,22 @@ for line in "input.txt".lines:
       break
     parts.add(parsePart(line))
 
-for name, wf in workflows:
-  echo fmt"{name}:"
-  for rule in wf.rules:
-    echo fmt"  {rule.prop} {rule.cond} {rule.rhs}: jmp {rule.next}"
-  echo fmt"  else: jmp {wf.final}"
+const debug_print_input = false
+if debug_print_input:
+  for name, wf in workflows:
+    echo fmt"{name}:"
+    for rule in wf.rules:
+      echo fmt"  {rule.prop} {rule.cond} {rule.rhs}: jmp {rule.next}"
+    echo fmt"  else: jmp {wf.final}"
 
 var part1Answer: uint64 = 0
 for part in parts:
   part1Answer += part.evalPart(workflows)
-
 echo fmt"Part 1: {part1Answer}"
+
+var edges = collectEdges(workflows)
+for dst, srcs in edges:
+  for src in srcs:
+    echo fmt"{dst:5} <--[ {src.prop} {src.cond} {src.rhs:4} ]-- {src.src}"
+
+var r = solveSymbolic(edges)
