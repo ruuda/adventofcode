@@ -20,20 +20,20 @@
 
 (def modules
   (reduce
-    (fn [acc module] (conj acc {(get module :name) module}))
+    (fn [acc module] (assoc acc (get module :name) module))
     {}
     (map parse-module wires)))
 
 (defn sim-flip [state outputs sender sig]
   "Send a signal to the flipflop, return [new-state pulses]."
   (if sig
-    [(not state) (map (fn [o] [o (not state)]) outputs)]
-    [state []]))
+    [state []]
+    [(not state) (map (fn [o] [o (not state)]) outputs)]))
 
 (defn sim-conj [state outputs sender sig]
   "Send a signal to the conjunction, return [new-state pulses]."
   (let
-    [new-state (conj state {sender sig})
+    [new-state (assoc state sender sig)
      all-active (and (vals new-state))]
     [new-state (map (fn [o] [o (not all-active)]) outputs)]))
 
@@ -54,23 +54,32 @@
 (defn sim [state pending]
   (if (empty? pending)
     state
-    (let [[src dst sig] (peek pending)
-          pending' (pop pending)
-          dst-mod (get modules dst)
-          kind (get dst-mod :kind)
-          outputs (get dst-mod :outputs)
-          sim-module (get sims kind)
-          default (get defaults kind)
-          dst-state (get dst state default)
-          [dst-new-state pulses] (sim-module dst-state outputs src sig)
-          ; Prepend the sender to each of the pulses. The sender of the new
-          ; pulses is the destination of the pulse we're currently processing.
-          addr-pulses (map (fn [[p-dst p-sig]] [dst p-dst p-sig]) pulses)
-          new-state (assoc state dst dst-new-state)]
-      (println src "--[" sig "]-->" dst "==>" pulses)
-      [new-state (concat (pop pending) addr-pulses)])))
+    (let
+      [[src dst sig] (first pending)
+       dst-mod (get modules dst)
+       kind (get dst-mod :kind)
+       outputs (get dst-mod :outputs)
+       sim-module (get sims kind)
+       default (get defaults kind)
+       dst-state (get dst state default)
+       [dst-new-state pulses] (sim-module dst-state outputs src sig)
+       ; Prepend the sender to each of the pulses. The sender of the new
+       ; pulses is the destination of the pulse we're currently processing.
+       addr-pulses (map (fn [[p-dst p-sig]] [dst p-dst p-sig]) pulses)
+       new-state (assoc state dst dst-new-state)]
+      (println src "--[" sig "]-->" dst "::" pulses)
+      [new-state (into (vec (drop 1 pending)) addr-pulses)])))
+
+(def sim-all
+  (loop
+    [state {}
+     pending [["button" "broadcaster" false]]]
+    (if (empty? pending)
+      (println "Simulation is done")
+      (let
+        [[new-state new-pending] (sim state pending)]
+        (recur new-state new-pending)))))
 
 (defn run [opts]
   (println "Modules" modules)
-  (println (sim {} [["button" "broadcaster" false]]))
   (println "Part 1:" "TODO"))
