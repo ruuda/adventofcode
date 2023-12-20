@@ -34,7 +34,7 @@
   "Send a signal to the conjunction, return [new-state pulses]."
   (let
     [new-state (assoc state sender sig)
-     all-active (and (vals new-state))]
+     all-active (reduce (fn [x y] (and x y)) (vals new-state))]
     [new-state (map (fn [o] [o (not all-active)]) outputs)]))
 
 (defn sim-broadcast [state outputs sender sig]
@@ -61,13 +61,15 @@
        outputs (get dst-mod :outputs)
        sim-module (get sims kind)
        default (get defaults kind)
-       dst-state (get dst state default)
+       dst-state (get state dst default)
        [dst-new-state pulses] (sim-module dst-state outputs src sig)
        ; Prepend the sender to each of the pulses. The sender of the new
        ; pulses is the destination of the pulse we're currently processing.
        addr-pulses (map (fn [[p-dst p-sig]] [dst p-dst p-sig]) pulses)
        new-state (assoc state dst dst-new-state)]
       (println src "--[" sig "]-->" dst "::" pulses)
+      ; (println "  " dst "state:" dst-state "->" dst-new-state)
+      ; (println "   all states:" new-state)
       [new-state (into (vec (drop 1 pending)) addr-pulses)])))
 
 (def sim-all
