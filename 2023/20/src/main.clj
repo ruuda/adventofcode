@@ -6,7 +6,7 @@
 
 (def wires
   "The wires that connect the different components."
-  (str/split-lines (slurp "example1.txt")))
+  (str/split-lines (slurp "example2.txt")))
 
 (defn parse-module [line]
   "Parse a module into [kind, name, outputs]."
@@ -56,7 +56,7 @@
     state
     (let
       [[src dst sig] (first pending)
-       dst-mod (get modules dst)
+       dst-mod (get modules dst {:kind "i" :outputs []})
        kind (get dst-mod :kind)
        outputs (get dst-mod :outputs)
        sim-module (get sims kind)
