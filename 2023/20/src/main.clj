@@ -35,33 +35,42 @@
   (let
     [new-state (conj state {sender sig})
      all-active (and (vals new-state))]
-    [new-state [map (fn [o] [o (not all-active)]) outputs]]))
+    [new-state (map (fn [o] [o (not all-active)]) outputs)]))
 
 (defn sim-broadcast [state outputs sender sig]
   "Copy the signal to all outputs, return [new-state pulses]."
-  [state [map (fn [o] [o sig]) outputs]])
+  [state (map (fn [o] [o sig]) outputs)])
+
+(def defaults
+  {"%" false
+   "&" {}
+   "i" false})
+
+(def sims
+  {"%" sim-flip
+   "&" sim-conj
+   "i" sim-broadcast})
 
 (defn sim [state pending]
   (if (empty? pending)
     state
     (let [[src dst sig] (peek pending)
           pending' (pop pending)
-          kind (get dst :kind)
-          outputs (get dst :outputs)
-          defaults {"%" false "&" {}}
-          sims {"%" sim-flip
-                "&" sim-conj
-                "i" sim-broadcast}
-          sim (get sims kind)
+          dst-mod (get modules dst)
+          kind (get dst-mod :kind)
+          outputs (get dst-mod :outputs)
+          sim-module (get sims kind)
           default (get defaults kind)
           dst-state (get dst state default)
-          [dst-new-state pulses] (sim dst-state outputs src sig)
+          [dst-new-state pulses] (sim-module dst-state outputs src sig)
           ; Prepend the sender to each of the pulses. The sender of the new
           ; pulses is the destination of the pulse we're currently processing.
           addr-pulses (map (fn [[p-dst p-sig]] [dst p-dst p-sig]) pulses)
           new-state (assoc state dst dst-new-state)]
-    [new-state (concat (pop pending) addr-pulses)])))
+      (println src "--[" sig "]-->" dst "==>" pulses)
+      [new-state (concat (pop pending) addr-pulses)])))
 
 (defn run [opts]
   (println "Modules" modules)
+  (println (sim {} [["button" "broadcaster" false]]))
   (println "Part 1:" "TODO"))
