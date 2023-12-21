@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System;
 
 namespace App
@@ -49,12 +50,52 @@ namespace App
     // to perform way more Dijkstra steps though -- is this going to finish in
     // time? I suspect it's not and we need to leverage the symmetry of the map,
     // but let's give it a try.
+    static void Part2(string fname)
+    {
+      var grid = new List<String>();
+      foreach (var line in File.ReadLines(fname))
+      {
+        // Since in part 2 the grid repeats infinitely, extend it to have a
+        // power of two size, so we can use a bitmask instead of expensive
+        // modulo. Perhaps this is a premature optimization ...
+        var w = BitOperations.RoundUpToPowerOf2((uint)line.Length);
+        grid.Add(line + line.Substring(0, (int)(w - line.Length)));
+      }
+      var h = BitOperations.RoundUpToPowerOf2((uint)grid.Count);
+      grid.AddRange(grid.Slice(0, (int)(h - grid.Count)));
+
+      var mask = (int)(h - 1);
+      Console.WriteLine("Mask: {0}", mask);
+
+      var start = FindStart(grid);
+      var frontier = new HashSet<Coord>();
+      var prevFrontier = new HashSet<Coord>();
+      frontier.Add(start);
+
+      int nSteps = 26501365;
+      int nSteps = 5000;
+      for (int i = 0; i < nSteps; i++)
+      {
+        var nextFrontier = frontier
+          .SelectMany(Neighbors)
+          .Where(c => !prevFrontier.Contains(c))
+          .Where(c => grid[c.Y & mask][c.X & mask] != '#')
+          .ToHashSet();
+        prevFrontier = frontier;
+        frontier = nextFrontier;
+        if (i % 1000 == 0)
+        {
+          Console.WriteLine("After {0} steps, the frontier has size {1}.", i + 1, frontier.Count);
+        }
+      }
+    }
 
     static void Main(String[] args)
     {
+      var fname = "example.txt";
       var grid = new List<String>();
 
-      foreach (var line in File.ReadLines("input.txt"))
+      foreach (var line in File.ReadLines(fname))
       {
         // Add walls around the grid so we don't have to worry about index out of
         // bounds.
@@ -81,8 +122,10 @@ namespace App
           .SelectMany(Neighbors)
           .Where(c => grid[c.Y][c.X] != '#')
           .ToHashSet();
-        Console.WriteLine(String.Format("After {0} steps can reach {1} plots.", step + 1, frontier.Count));
       }
+      Console.WriteLine(String.Format("After {0} steps can reach {1} plots.", steps, frontier.Count));
+
+      Part2(fname);
     }
   }
 }
