@@ -39,6 +39,17 @@ namespace App
       throw new Exception("There should be an 'S' on the grid.");
     }
 
+    // Thinking out loud for part 2. For visited plots, we can summarize them in
+    // two numbers, how many are reachable after an even and uneven number of
+    // steps. But if we do just Dijkstra, what is the size of the frontier? With
+    // 26501365 steps in the Manhattan metric, a "circle" is a diamond with
+    // diagonals of size twice that, so a square with size of roughly 0.707
+    // (= sqrt 0.5) times that, times 4 for 4 edges, so the frontier would be
+    // at most 74,957,179 plots, which fits in memory just fine. We would need
+    // to perform way more Dijkstra steps though -- is this going to finish in
+    // time? I suspect it's not and we need to leverage the symmetry of the map,
+    // but let's give it a try.
+
     static void Main(String[] args)
     {
       var grid = new List<String>();
