@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System;
 
 namespace App
@@ -42,7 +43,7 @@ namespace App
     {
       var grid = new List<String>();
 
-      foreach (var line in File.ReadLines("example.txt"))
+      foreach (var line in File.ReadLines("input.txt"))
       {
         // Add walls around the grid so we don't have to worry about index out of
         // bounds.
@@ -59,6 +60,18 @@ namespace App
       }
 
       var start = FindStart(grid);
+      var frontier = new HashSet<Coord>();
+      frontier.Add(start);
+
+      int steps = 64;
+      for (int step = 0; step < steps; step++)
+      {
+        frontier = frontier
+          .SelectMany(Neighbors)
+          .Where(c => grid[c.Y][c.X] != '#')
+          .ToHashSet();
+        Console.WriteLine(String.Format("After {0} steps can reach {1} plots.", step + 1, frontier.Count));
+      }
     }
   }
 }
