@@ -67,25 +67,65 @@ namespace App
       var mask = (int)(h - 1);
       Console.WriteLine("Mask: {0}", mask);
 
+      foreach (var line in grid) {
+        Console.WriteLine(line);
+      }
+
       var start = FindStart(grid);
       var frontier = new HashSet<Coord>();
       var prevFrontier = new HashSet<Coord>();
       frontier.Add(start);
 
-      int nSteps = 26501365;
+      //int nSteps = 26501365;
       int nSteps = 5000;
-      for (int i = 0; i < nSteps; i++)
+      ulong[] counts = new ulong[2] { 1, 0 };
+
+      for (int step = 1; step <= nSteps; step++)
       {
-        var nextFrontier = frontier
-          .SelectMany(Neighbors)
-          .Where(c => !prevFrontier.Contains(c))
-          .Where(c => grid[c.Y & mask][c.X & mask] != '#')
-          .ToHashSet();
+        // Empirical observation on the example input, when the frontier grows
+        // a lot, it is usually by 120 or 130%, so size the hash set for the
+        // next frontier to that so it doesn't need to reallocate.
+        var expectedGrowth = frontier.Count * 166 / 128;
+        var nextFrontier = new HashSet<Coord>(frontier.Count + expectedGrowth);
+
+        foreach (Coord c in frontier)
+        {
+          Coord[] neighbors = {
+            new Coord(c.X - 1, c.Y),
+            new Coord(c.X + 1, c.Y),
+            new Coord(c.X, c.Y - 1),
+            new Coord(c.X, c.Y + 1),
+          };
+          foreach (Coord n in neighbors)
+          {
+            if (!prevFrontier.Contains(n) && grid[n.Y & mask][n.X & mask] != '#')
+            {
+              nextFrontier.Add(n);
+            }
+          }
+        }
+        counts[step & 1] += (ulong)nextFrontier.Count;
+
+        if (nextFrontier.Count > frontier.Count + expectedGrowth)
+        {
+          Console.WriteLine
+          (
+              "Actual growth was {0}, about {1}%.",
+              nextFrontier.Count - frontier.Count,
+              100.0 * (float)nextFrontier.Count / (float)frontier.Count
+          );
+        }
+
         prevFrontier = frontier;
         frontier = nextFrontier;
-        if (i % 1000 == 0)
+
+        if (step <= 50 || step == 100 || step == 500 || step % 1000 == 0)
         {
-          Console.WriteLine("After {0} steps, the frontier has size {1}.", i + 1, frontier.Count);
+          Console.WriteLine
+          (
+            "After step {0}, the frontier has size {1} and the count is {2}.",
+            step, frontier.Count, counts[step & 1]
+          );
         }
       }
     }
