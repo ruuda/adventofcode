@@ -86,6 +86,55 @@ fn mark_brick(wh: u32, w: u32, tower: []u16, b: brick, mark: u16) void = {
 	};
 };
 
+// Count the number of nodes that depend (indirectly) on `self`.
+fn count_chain(start: u16, deps: [][]u16) u32 = {
+	// Keep a buffer of mark bits (bytes). We are going to mark the start
+	// node, then everything reachable from it, etc., until nothing more is
+	// reached, and then the number of marked nodes is how many blocks would
+	// disintegrate (including the start).
+	let marks: []u8 = alloc([0...], len(deps));
+	defer free(marks);
+	marks[start] = 1;
+
+	// The start node itself is not included in the count, we want to know
+	// how many *additional* nodes would disintegrate.
+	let n_marked: u32 = 0;
+
+	let made_progress = true;
+	for (made_progress) {
+		made_progress = false;
+
+		// Traverse all nodes once more.
+		for (let j: u16 = 1; j < len(deps); j += 1) {
+			// If the node is already marked, there is nothing to do.
+			if (marks[j] == 1) continue;
+
+			// If the node depends on nothing, it rests on the
+			// ground, and if we did not mark it explicitly, then we
+			// cannot mark such node.
+			const deps_j = deps[j];
+			if (len(deps_j) == 0) continue;
+
+			// Check whether all dependencies are marked.
+			let should_mark = true;
+			for (let k: size = 0; k < len(deps_j); k += 1) {
+				if (marks[deps_j[k]] == 0) {
+					should_mark = false;
+					break;
+				};
+			};
+			if (should_mark) {
+				made_progress = true;
+				n_marked += 1;
+				marks[j] = 1;
+				break;
+			};
+		};
+	};
+
+	return n_marked;
+};
+
 export fn main() void = {
 	const source = os::open("input.txt")!;
 	const source = io::drain(source)!;
@@ -167,6 +216,7 @@ export fn main() void = {
 	// going to just make an array of mark bytes.
 	let marks: []u8 = alloc([0...], len(bricks));
 	let is_essential: []u8 = alloc([0...], len(bricks));
+	let depends: [][]u16 = alloc([[]...], len(bricks));
 	for (let i: size = 1; i < len(bricks); i += 1) {
 		const b = bricks[i];
 
@@ -194,15 +244,35 @@ export fn main() void = {
 		fmt::printf("Brick {} is supported by {} bricks.\n", i, n_support)!;
 
 		// If a brick is supported by only a single brick, then that
-		// brick is essential and cannot be disintegrated.
+		// brick is essential and cannot be disintegrated, and this
+		// brick depends on it.
 		if (n_support == 1) is_essential[bj] = 1;
+
+		let depends_i: []u16 = alloc([0...], n_support);
+		let k: size = 0;
+		for (let j: u16 = 1; j < len(bricks); j += 1) {
+			if (marks[j] == 1) {
+				depends_i[k] = j;
+				k += 1;
+			};
+		};
+		depends[i] = depends_i;
 	};
 
 	let n_essential: u32 = 0;
-	for (let i: size = 1; i < len(bricks); i += 1) {
-		fmt::printf("Brick {} is essential: {}.\n", i, is_essential[i])!;
+	let chain_len_sum: u32 = 0;
+	for (let i: u16 = 1; i < len(bricks); i += 1) {
+		const chain_len = count_chain(i, depends);
+		fmt::printf("Brick {}: is_essential: {}, chain_len: {}.\n", i, is_essential[i], chain_len)!;
+		if (is_essential[i] == 1) {
+			assert(chain_len > 0, "If the brick is essential, at least one other falls.");
+		} else {
+			assert(chain_len == 0, "If the brick is not essential, no other brick falls.");
+		};
 		n_essential += is_essential[i];
+		chain_len_sum += chain_len;
 	};
 	let n_safe = len(bricks) - 1 - n_essential;
 	fmt::printf("Part 1: {} bricks are essential. {} bricks can be safely disintegrated.\n", n_essential, n_safe)!;
+	fmt::printf("Part 2: Sum of the number of other bricks that would fall: {}.\n", chain_len_sum)!;
 };
