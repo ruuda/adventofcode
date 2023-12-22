@@ -87,7 +87,7 @@ fn mark_brick(wh: u32, w: u32, tower: []u16, b: brick, mark: u16) void = {
 };
 
 export fn main() void = {
-	const source = os::open("input.txt")!;
+	const source = os::open("example.txt")!;
 	const source = io::drain(source)!;
 	const source = strings::fromutf8(source)!;
 	const lines: []str = strings::split(source, "\n");
@@ -140,34 +140,24 @@ export fn main() void = {
 
 	// Iterate over all coordinates in the tower, from low to high, and if
 	// we find an empty cell, try to move bricks above it down.
-	for (let z: u32 = 1; z < d; z += 1) {
-		fmt::printf("Looking at layer z={}.\n", z)!;
-		for (let y: u32 = 0; y < h; y += 1) {
-			for (let x: u32 = 0; x < w; x += 1) {
-				// Is this space empty? Could something above us
-				// move into it? If not, move on.
-				const bi = tower[wh * z + w * y + x];
-				if (bi > 0) continue;
+	let moved_any = true;
+	for (moved_any) {
+		moved_any = false;
+		for (let bi: u16 = 1; bi < len(bricks); bi += 1) {
+			let b: *brick = &bricks[bi];
 
-				// Look up. Is there a brick there that should
-				// fall down?
-				for (let z1: u32 = z + 1; z1 < d; z1 += 1) {
-					const bi = tower[wh * z1 + w * y + x];
-					if (bi == 0) continue;
-					let b: *brick = &bricks[bi];
-					fmt::printf("  Found brick {} at {}, {}, {}.\n", bi, x, y, z1)!;
-
-					// When we find a brick, move it down
-					// until it can no longer move down.
-					for (b.z0 > 1 && can_down(wh, w, tower, *b)) {
-						mark_brick(wh, w, tower, *b, 0);
-						b.z0 -= 1;
-						b.z1 -= 1;
-						mark_brick(wh, w, tower, *b, bi);
-						fmt::printf("    Moved down to z={}.\n", b.z0)!;
-					};
-				};
+			// When we find a brick, move it down
+			// until it can no longer move down.
+			for (b.z0 > 1 && can_down(wh, w, tower, *b)) {
+				mark_brick(wh, w, tower, *b, 0);
+				b.z0 -= 1;
+				b.z1 -= 1;
+				mark_brick(wh, w, tower, *b, bi);
+				fmt::printf("Moved brick {} down to z={}.\n", bi, b.z0)!;
+				moved_any = true;
 			};
+
+			if (moved_any) break;
 		};
 	};
 
