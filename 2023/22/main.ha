@@ -87,7 +87,7 @@ fn mark_brick(wh: u32, w: u32, tower: []u16, b: brick, mark: u16) void = {
 };
 
 export fn main() void = {
-	const source = os::open("example.txt")!;
+	const source = os::open("input.txt")!;
 	const source = io::drain(source)!;
 	const source = strings::fromutf8(source)!;
 	const lines: []str = strings::split(source, "\n");
@@ -171,7 +171,7 @@ export fn main() void = {
 		const b = bricks[i];
 
 		// Bricks at z=1 are supported by the ground.
-		if (b.z1 == 1) continue;
+		if (b.z0 == 1) continue;
 
 		// Clear all the mark bytes.
 		for (let j: size = 0; j < len(bricks); j += 1) {
@@ -187,7 +187,7 @@ export fn main() void = {
 			n_support += marks[j];
 			if (marks[j] == 1) bj = j;
 		};
-		if (n_support > 0) {
+		if (n_support == 0) {
 			fmt::printf("Brick {} at {},{},{} was not moved down all the way.\n", i, b.x0, b.y0, b.z0)!;
 			assert(false, "Brick was not moved down all the way.");
 		};
