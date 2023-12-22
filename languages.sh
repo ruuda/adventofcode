@@ -6,7 +6,7 @@
 # using new languages or languages that are in the bottom 50%.
 
 tokei \
-  --exclude '{*.txt,*.md,Makefile,*.edn,*.fsproj,languages.sh,flake.nix}' \
+  --exclude '{*.txt,*.md,Makefile,*.edn,*.csproj,*.fsproj,languages.sh,flake.nix}' \
   --compact \
   --rsort code \
   . \
@@ -20,8 +20,8 @@ tokei \
   $4 ~ /[0-9]+/ && $1 != "Total" {
     fraction = $4 / total
     cumfraction = (cumulative + $4) / total
-    decision = cumulative / total <= 0.5 ? "[ ]" : "[x]"
-    color = cumulative / total <= 0.5 ? "31" : "32"
+    decision = cumulative / total <= 0.6666 ? "[ ]" : "[x]"
+    color = cumulative / total <= 0.6666 ? "31" : "32"
     if ($1 == "Headache") $1 = "Hare";
     printf("\x1b[%sm%s,%s,%5.1f,%5.1f,%d,%d\x1b[0m\n",
       color,
