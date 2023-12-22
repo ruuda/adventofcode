@@ -21,6 +21,48 @@ fn reorient(b: *block) void = {
 	if (b.z0 > b.z1) { const tmp = b.z1; b.z1 = b.z0; b.z0 = tmp; };
 };
 
+fn dx_dy_dz(b: block) (u32, u32, u32) = {
+	let dx: u32 = if (b.x1 > b.x0) 1 else 0;
+	let dy: u32 = if (b.y1 > b.y0) 1 else 0;
+	let dz: u32 = if (b.z1 > b.z0) 1 else 0;
+	return (dx, dy, dz);
+};
+
+// Return whether the block can move down one position.
+fn can_down(wh: u32, w: u32, tower: []u16, b: block) bool = {
+	let (dx, dy, dz) = dx_dy_dz(b);
+	let (x, y, z) = (b.x0, b.y0, b.z0);
+	let is_empty = (tower[(z - 1) * wh + y * w + x] == 0);
+
+	// For a block standing up, we would find the cells to not be empty,
+	// because the block itself is there, but it doesn't matter, we only
+	// need to check under it.
+	if (dz == 1) return is_empty;
+
+	for (is_empty) {
+		x += dx;
+		y += dy;
+		is_empty = (tower[(z - 1) * wh + y * w + x] == 0);
+		if (x == b.x1 && y == b.y1) break;
+	};
+
+	return is_empty;
+};
+
+// Write `mark` to the cells that the block occupies in the tower.
+fn mark_block(wh: u32, w: u32, tower: []u16, b: block, mark: u16) void = {
+	let (dx, dy, dz) = dx_dy_dz(b);
+	let (x, y, z) = (b.x0, b.y0, b.z0);
+	tower[z * wh + y * w + x] = mark;
+	for (true) {
+		x += dx;
+		y += dy;
+		z += dz;
+		tower[z * wh + y * w + x] = mark;
+		if (x == b.x1 && y == b.y1 && z == b.z1) break;
+	};
+};
+
 export fn main() void = {
 	const source = os::open("example.txt")!;
 	const source = io::drain(source)!;
@@ -70,19 +112,38 @@ export fn main() void = {
 
 	for (let i: u16 = 1; i < len(blocks); i += 1) {
 		let b = blocks[i];
-		let dx: u32 = if (b.x1 > b.x0) 1 else 0;
-		let dy: u32 = if (b.y1 > b.y0) 1 else 0;
-		let dz: u32 = if (b.z1 > b.z0) 1 else 0;
-		let x = b.x0;
-		let y = b.y0;
-		let z = b.z0;
-		tower[z * wh + y * w + x] = i;
-		for (true) {
-			x += dx;
-			y += dy;
-			z += dz;
-			tower[z * wh + y * w + x] = i;
-			if (x == b.x1 && y == b.y1 && z == b.z1) break;
+		mark_block(wh, w, tower, b, i);
+	};
+
+	// Iterate over all coordinates in the tower.
+	for (let z: u32 = 1; z < d; z += 1) {
+		fmt::printf("Looking at layer z={}.\n", z)!;
+		for (let y: u32 = 0; y < h; y += 1) {
+			for (let x: u32 = 0; x < w; x += 1) {
+				// Is this space empty? Could something above us
+				// move into it? If not, move on.
+				const bi = tower[wh * z + w * y + x];
+				if (bi > 0) continue;
+
+				// Look up. Is there a block there that should
+				// fall down?
+				for (let z1: u32 = z + 1; z1 < d; z1 += 1) {
+					const bi = tower[wh * z1 + w * y + x];
+					if (bi == 0) continue;
+					let b: *block = &blocks[bi];
+					fmt::printf("  Found block {} at {}, {}, {}.\n", bi, x, y, z1)!;
+
+					// When we find a block, move it down
+					// until it can no longer move down.
+					for (can_down(wh, w, tower, *b)) {
+						mark_block(wh, w, tower, *b, 0);
+						b.z0 -= 1;
+						b.z1 -= 1;
+						mark_block(wh, w, tower, *b, bi);
+						fmt::printf("    Moved down to z={}.\n", b.z0)!;
+					};
+				};
+			};
 		};
 	};
 };
