@@ -67,7 +67,7 @@ fn mark_support(wh: u32, w: u32, tower: []u16, b: brick, marks: []u8) void = {
 		y += dy;
 		below = tower[(z - 1) * wh + y * w + x];
 		marks[below] = 1;
-		if (below > 0) fmt::printf("Below {},{},{} is brick {}.\n", x, y, z, below)!;
+		// if (below > 0) fmt::printf("Below {},{},{} is brick {}.\n", x, y, z, below)!;
 		if (x == b.x1 && y == b.y1) break;
 	};
 };
@@ -87,7 +87,7 @@ fn mark_brick(wh: u32, w: u32, tower: []u16, b: brick, mark: u16) void = {
 };
 
 export fn main() void = {
-	const source = os::open("example.txt")!;
+	const source = os::open("input.txt")!;
 	const source = io::drain(source)!;
 	const source = strings::fromutf8(source)!;
 	const lines: []str = strings::split(source, "\n");
@@ -159,7 +159,7 @@ export fn main() void = {
 
 					// When we find a brick, move it down
 					// until it can no longer move down.
-					for (can_down(wh, w, tower, *b)) {
+					for (b.z0 > 1 && can_down(wh, w, tower, *b)) {
 						mark_brick(wh, w, tower, *b, 0);
 						b.z0 -= 1;
 						b.z1 -= 1;
@@ -176,6 +176,7 @@ export fn main() void = {
 	// the supporting brick ids, but the set of bricks is ~small, so I'm
 	// going to just make an array of mark bytes.
 	let marks: []u8 = alloc([0...], len(bricks));
+	let is_essential: []u8 = alloc([0...], len(bricks));
 	for (let i: size = 1; i < len(bricks); i += 1) {
 		const b = bricks[i];
 
@@ -191,10 +192,27 @@ export fn main() void = {
 		// Count the number of distinct supporting bricks. Skip brick 0
 		// because it does not exist.
 		let n_support: u8 = 0;
+		let bj: size = 0;
 		for (let j: size = 1; j < len(bricks); j += 1) {
 			n_support += marks[j];
+			if (marks[j] == 1) bj = j;
 		};
-		assert(n_support > 0, "Brick was not moved down all the way.");
+		if (n_support > 0) {
+			fmt::printf("Brick {} at {},{},{} was not moved down all the way.\n", i, b.x0, b.y0, b.z0)!;
+			assert(false, "Brick was not moved down all the way.");
+		};
 		fmt::printf("Brick {} is supported by {} bricks.\n", i, n_support)!;
+
+		// If a brick is supported by only a single brick, then that
+		// brick is essential and cannot be disintegrated.
+		if (n_support == 1) is_essential[bj] = 1;
 	};
+
+	let n_essential: u32 = 0;
+	for (let i: size = 1; i < len(bricks); i += 1) {
+		fmt::printf("Brick {} is essential: {}.\n", i, is_essential[i])!;
+		n_essential += is_essential[i];
+	};
+	let n_safe = len(bricks) - 1 - n_essential;
+	fmt::printf("Part 1: {} bricks are essential. {} bricks can be safely disintegrated.\n", n_essential, n_safe)!;
 };
