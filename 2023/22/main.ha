@@ -49,6 +49,29 @@ fn can_down(wh: u32, w: u32, tower: []u16, b: brick) bool = {
 	return is_empty;
 };
 
+// Put a 1 in the marks array at the indices of the supporting bricks.
+// This also marks the 0 brick if there is an unsupported cell.
+fn mark_support(wh: u32, w: u32, tower: []u16, b: brick, marks: []u8) void = {
+	let (dx, dy, dz) = dx_dy_dz(b);
+	let (x, y, z) = (b.x0, b.y0, b.z0);
+	let below = tower[(z - 1) * wh + y * w + x];
+	marks[below] = 1;
+
+	// For a brick standing up, we only need to mark the one position below
+	// and then we are done.
+	if (dz == 1) return;
+
+	// Otherwise we look at all the other positions below.
+	for (true) {
+		x += dx;
+		y += dy;
+		below = tower[(z - 1) * wh + y * w + x];
+		marks[below] = 1;
+		if (below > 0) fmt::printf("Below {},{},{} is brick {}.\n", x, y, z, below)!;
+		if (x == b.x1 && y == b.y1) break;
+	};
+};
+
 // Write `mark` to the cells that the brick occupies in the tower.
 fn mark_brick(wh: u32, w: u32, tower: []u16, b: brick, mark: u16) void = {
 	let (dx, dy, dz) = dx_dy_dz(b);
@@ -146,5 +169,32 @@ export fn main() void = {
 				};
 			};
 		};
+	};
+
+	// For every brick, count how many other bricks they are supported by.
+	// Maybe the efficient way to do it would be to keep a hash set of all
+	// the supporting brick ids, but the set of bricks is ~small, so I'm
+	// going to just make an array of mark bytes.
+	let marks: []u8 = alloc([0...], len(bricks));
+	for (let i: size = 1; i < len(bricks); i += 1) {
+		const b = bricks[i];
+
+		// Bricks at z=1 are supported by the ground.
+		if (b.z1 == 1) continue;
+
+		// Clear all the mark bytes.
+		for (let j: size = 0; j < len(bricks); j += 1) {
+			marks[j] = 0;
+		};
+		mark_support(wh, w, tower, b, marks);
+
+		// Count the number of distinct supporting bricks. Skip brick 0
+		// because it does not exist.
+		let n_support: u8 = 0;
+		for (let j: size = 1; j < len(bricks); j += 1) {
+			n_support += marks[j];
+		};
+		assert(n_support > 0, "Brick was not moved down all the way.");
+		fmt::printf("Brick {} is supported by {} bricks.\n", i, n_support)!;
 	};
 };
