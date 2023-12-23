@@ -53,6 +53,16 @@ let neighbors: Coord -> Coord list =
       Coord(coord.x, coord.y - 1)
     ]
 
+type Board = {
+  xSplits: int list
+  ySplits: int list
+}
+
+let newBoard: Board = {
+  xSplits = -0xffffff :: 0xffffff :: []
+  ySplits = -0xffffff :: 0xffffff :: []
+}
+
 let walkOutline: Move list -> Coord Set = fun moves ->
   // Append to the result n steps in direction dir from positition c,
   // excluding c itself. I thought this may be more efficient than the recursive
