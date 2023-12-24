@@ -1,6 +1,7 @@
 #!/usr/bin/env luajit
 
 map = {}
+part2 = true
 
 f = io.open("input.txt", "r")
 for line in f:lines() do
@@ -40,7 +41,7 @@ end
 
 function explore_hike(xs, ys, closed, n_closed)
   if xs == x_end and ys == height then
-    print("Found exit, route has length", n_closed)
+    --print("Found exit, route has length", n_closed)
     return n_closed
   end
 
@@ -64,6 +65,7 @@ function explore_hike(xs, ys, closed, n_closed)
           or (move == "<" and d.dx == -1)
           or (move == "^" and d.dy == -1)
           or (move == "v" and d.dy == 1)
+          or (part2 and move ~= "#")
         )
         if is_ok then
           table.insert(candidates, {x=nx, y=ny})
@@ -73,7 +75,7 @@ function explore_hike(xs, ys, closed, n_closed)
   end
 
   if table.getn(candidates) == 0 then
-    return {}
+    return 0
   elseif table.getn(candidates) == 1 then
     -- If there is only one step we can take, then we can do a tail call and we
     -- can recycle the closed set and mutate it in place.
