@@ -5,7 +5,7 @@
 
 (def edge-specs
   "Lines of the form 'node: node node node'."
-  (str/split-lines (slurp "example.txt")))
+  (str/split-lines (slurp "input.txt")))
 
 (defn parse-append-edge-spec [seed-edges edge-spec]
   "Parse the input into a symmetric map of node: neighbors."
@@ -64,6 +64,19 @@
        cut-size (first (vals (first (vals cut))))]
       (if (= threshold cut-size) cut (recur)))))
 
+(defn part1 [cut]
+  (let
+    [n0 (first (keys cut))
+     n1 (first (keys (first (vals cut))))
+     ; Hack: how many nodes are in each component? We know the node names are
+     ; three letters, so we can count the string lengths.
+     cn0 (/ (count n0) 3)
+     cn1 (/ (count n1) 3)]
+    (* cn0 cn1)))
+
+
 (defn run [opts]
   (println "Graph" initial-graph)
-  (println "Karger-n" (karger-until initial-graph 3)))
+  (let [cut (karger-until initial-graph 3)]
+    (println "Karger-n" (karger-until initial-graph 3))
+    (println "Part 1:" (part1 cut))))
