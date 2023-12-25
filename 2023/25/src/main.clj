@@ -47,6 +47,23 @@
       graph-0
       (keys out-n2))))
 
+(defn karger-step [graph]
+  (loop [g graph]
+    (if (= 2 (count g))
+      g
+      (let
+        [n0 (rand-nth (keys g))
+         n1 (rand-nth (keys (get g n0)))]
+        (recur (contract g n0 n1))))))
+
+(defn karger-until [graph threshold]
+  "Try random cuts until we find one of the threshold size."
+  (loop []
+    (let
+      [cut (karger-step graph)
+       cut-size (first (vals (first (vals cut))))]
+      (if (= threshold cut-size) cut (recur)))))
+
 (defn run [opts]
   (println "Graph" initial-graph)
-  (println "hfx-xhk" (contract initial-graph "hfx" "xhk")))
+  (println "Karger-n" (karger-until initial-graph 3)))
