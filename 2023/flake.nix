@@ -2,7 +2,7 @@
   description = "Advent of Code 2023 devenv";
 
   inputs.nixpkgs.url = "nixpkgs/nixos-unstable";
-  inputs.rcl.url = "github:ruuda/rcl?ref=more-builtins";
+  inputs.rcl.url = "github:ruuda/rcl?ref=master";
   inputs.rcl.inputs.nixpkgs.follows = "nixpkgs";
 
   outputs = { self, nixpkgs, rcl }:

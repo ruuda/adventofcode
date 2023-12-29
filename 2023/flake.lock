@@ -22,16 +22,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1701734538,
-        "narHash": "sha256-OsKwm0vSRS1hEwCPsi99l1IwzzknOJXA7NvhixSVqWs=",
+        "lastModified": 1703852997,
+        "narHash": "sha256-CNtDb2HS5AU9GZaO3qKh0Bq/fQDFK/D9jwd7bXafPGU=",
         "owner": "ruuda",
         "repo": "rcl",
-        "rev": "ddf21a2aa79f1ccff980c25790de99efa7501131",
+        "rev": "8d4d61e2f1ddce375771edb8b7ef5514bda099fd",
         "type": "github"
       },
       "original": {
         "owner": "ruuda",
-        "ref": "more-builtins",
+        "ref": "master",
         "repo": "rcl",
         "type": "github"
       }

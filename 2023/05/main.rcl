@@ -26,27 +26,25 @@ let maps = [
 let range = (begin, end) => { begin = begin, end = end };
 let offset_range = (r, off) => { for k, v in r: k: v + off };
 let move_range = (in_range, map_range, offset) =>
-  if
+  if in_range.end <= map_range.begin:
     // No overlap
-    in_range.end <= map_range.begin
-  then
     { unmapped = [in_range], mapped = [] }
 
-  else if
-    in_range.begin >= map_range.past_end
-  then
+  else if in_range.begin >= map_range.past_end:
     { unmapped = [in_range], mapped = [] }
 
-  else if
+  else if (
+    (in_range.begin >= map_range.begin)
+    and (in_range.past_end <= map_range.past_end)
+  ):
     // The inner range is contained so we map the entire thing.
-    (in_range.begin >= map_range.begin) and (in_range.past_end <= map_range.past_end)
-  then
     { mapped = [offset_range(in_range, offset)], unmapped = [] }
 
-  else if
+  else if (
+    (map_range.begin >= in_range.begin)
+    and (map_range.past_end <= in_range.past_end)
+  ):
     // The map range is contained, so we have to slice it out.
-    (map_range.begin >= in_range.begin) and (map_range.past_end <= in_range.past_end)
-  then
     {
       mapped = [offset_range(map_range, offset)],
       unmapped = [
@@ -55,10 +53,8 @@ let move_range = (in_range, map_range, offset) =>
       ],
     }
 
-  else if
+  else if map_range.begin <= in_range.begin:
     // The map range overlaps the left-hand side.
-    map_range.begin <= in_range.begin
-  then
     assert map_range.past_end <= in_range.past_end, "Ranges must be consistent.";
     {
       mapped = [range(in_range.begin + offset, map_range.end + offset)],

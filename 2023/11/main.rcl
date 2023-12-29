@@ -1,7 +1,7 @@
 // Load the input, break it up into a list of characters per row.
 let map = [
   for line in std.read_file_utf8("input.txt").split_lines():
-  [for char in line.split(""): if char != "": char]
+  line.chars()
 ];
 
 // Get the coordinates of the galaxies, where there is a '#' symbol.
@@ -36,14 +36,14 @@ let expansion = 999_999;
 // get moved by all the gaps before them.
 let expand_x = (galaxies, gaps) => gaps.reverse().fold(galaxies, (gs, gap_x) => [
   for g in gs:
-  { x = g.x + (if g.x > gap_x then expansion else 0), y = g.y }
+  { x = g.x + (if g.x > gap_x: expansion else 0), y = g.y }
 ]);
 let expand_y = (galaxies, gaps) => gaps.reverse().fold(galaxies, (gs, gap_y) => [
   for g in gs:
-  { x = g.x, y = g.y + (if g.y > gap_y then expansion else 0) }
+  { x = g.x, y = g.y + (if g.y > gap_y: expansion else 0) }
 ]);
 
-let abs = x => if x < 0 then -x else x;
+let abs = x => if x < 0: -x else x;
 
 // Return the distances (using the Manhattan metric) for all pairs of galaxies.
 let pairwise_distances = galaxies => [

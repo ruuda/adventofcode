@@ -18,15 +18,13 @@ let card_points = card => [
   for n in card.haves:
   if card.wins.contains(n):
   n
-].fold(0, (score, n) => if score == 0 then 1 else score * 2);
+].fold(0, (score, n) => if score == 0: 1 else score * 2);
 
 // Computation for part 2. We recursively build a list with the "depth" of every
 // card, starting from the back, because earlier cards only reference later
 // cards.
 let card_depths = (self, i) =>
-  if
-    i >= cards.len()
-  then
+  if i >= cards.len():
     []
   else
     let depths = self(self, i + 1);

@@ -14,7 +14,7 @@ let power = draws =>
         for k, vx in x:
         // TODO: This should be `y[k]`, implement indexing on dicts.
         let vy = y.get(k, 0);
-        k: if vx > vy then vx else vy,
+        k: if vx > vy: vx else vy,
       },
     );
   maxima.red * maxima.green * maxima.blue;

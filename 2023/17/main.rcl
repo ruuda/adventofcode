@@ -1,6 +1,8 @@
 let map = [
-  for line in std.read_file_utf8("example.txt").split_lines():
-  [for char in line.split(""): if char != "": char.parse_int()]
+  for line in std.read_file_utf8("example.txt").split_lines(): [
+    for char in line.chars():
+    char.parse_int()
+  ]
 ];
 
 let map_w = map[0].len();
@@ -53,9 +55,9 @@ let step = (crucible, node, dir) =>
     x = node.x + dx.get(dir, 0),
     y = node.y + dy.get(dir, 0),
     dir = dir,
-    min_ahead = (if ahead then node else crucible).min_ahead - 1,
-    max_ahead = (if ahead then node else crucible).max_ahead - 1,
-    is_valid = if ahead then can_ahead else can_turn,
+    min_ahead = (if ahead: node else crucible).min_ahead - 1,
+    max_ahead = (if ahead: node else crucible).max_ahead - 1,
+    is_valid = if ahead: can_ahead else can_turn,
   };
 
 // Take all valid steps from the given node.
@@ -84,21 +86,22 @@ let best_route_cost = crucible =>
     let node = pop.head[1];
     let new_open = pop.tail;
 
-    // If we are at the exit, then the cost so far is the final cost.
-    if at_exit(node)
-    then cost else
+    if at_exit(node):
+      // If we are at the exit, then the cost so far is the final cost.
+      cost
 
-    // If we've visited this node already, then recur with the new opens.
-    if closed.contains(node)
-    then self(self, new_open, closed) else
+    else if closed.contains(node):
+      // If we've visited this node already, then recur with the new opens.
+      self(self, new_open, closed)
 
-    // Finally, explore all possible steps from here.
-    let new_closed = {node, for n in closed: n};
-    let new_open = {
-      for n in steps(crucible, node): [cost + heat_loss(n), n],
-      for x in open: x,
-    };
-    self(self, new_open, new_closed);
+    else
+      // Finally, explore all possible steps from here.
+      let new_closed = {node, for n in closed: n};
+      let new_open = {
+        for n in steps(crucible, node): [cost + heat_loss(n), n],
+        for x in open: x,
+      };
+      self(self, new_open, new_closed);
 
   let empty_set = {for x in []: x};
   // TODO: So it fails with a stack overflow ... Adding tail calls to RCL is not
