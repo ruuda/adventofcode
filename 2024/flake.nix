@@ -2,7 +2,7 @@
   description = "Advent of Code 2024 devenv";
 
   inputs.nixpkgs.url = "nixpkgs/nixos-unstable";
-  inputs.rcl.url = "github:ruuda/rcl?ref=v0.6.0";
+  inputs.rcl.url = "github:ruuda/rcl?ref=master";
   inputs.rcl.inputs.nixpkgs.follows = "nixpkgs";
 
   outputs = { self, nixpkgs, rcl }:

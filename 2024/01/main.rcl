@@ -1,7 +1,23 @@
-let data = std.read_file_utf8("example.txt");
+let data = std.read_file_utf8("input.txt");
 let lines = data.split_lines();
-let lhs = [for x in lines: x.split("   ")[0].parse_int()];
-let rhs = [for x in lines: x.split("   ")[1].parse_int()];
-// Oops, now I need to implement sort.
-// Never mind.
-[lhs, rhs]
+let lhs = [for x in lines: x.split("   ")[0].parse_int()].sort();
+let rhs = [for x in lines: x.split("   ")[1].parse_int()].sort();
+
+// Part 1.
+let abs = x => if x < 0: -x else: x;
+let distances = [
+  for i, v in lhs.enumerate():
+  abs(v - rhs[i])
+];
+
+// Part 2.
+let counts = { for k, vs in rhs.group_by(x => x): k: vs.len() };
+let similarities = [
+  for i in lhs:
+  i * counts.get(i, 0)
+];
+
+{
+  part1 = distances.sum(),
+  part2 = similarities.sum(),
+}
