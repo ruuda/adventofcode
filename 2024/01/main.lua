@@ -16,10 +16,23 @@ table.sort(lhs)
 table.sort(rhs)
 
 d = 0
-
 for i = 1, table.getn(lhs) do
   d = d + math.abs(lhs[i] - rhs[i])
 end
 
-print(d)
+print("Part 1:", d)
+
+d = 0
+for i = 1, table.getn(lhs) do
+  n = 0
+  k = lhs[i]
+  for j = 1, table.getn(lhs) do
+    if k == rhs[j] then
+      n = n + 1
+    end
+  end
+  d = d + k * n
+end
+
+print("Part 2:", d)
 
