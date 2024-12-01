@@ -10,29 +10,29 @@ solution must be written in either:
  * A language that I haven’t used before in this repository.
  * A language in the bottom 33% used in this repository, by lines of code.
 
-Languages used as of 2023 day 22, as computed by `languages.sh`:
+Languages used as of 2024 day 1, as computed by `languages.sh`:
 
 ```
 Next   Language   %Used   %Cumulative   Files   Lines
-[ ]    Pony         9.4           9.4       4     565
-[ ]    Go           9.1          18.4       4     546
-[ ]    Nim          8.2          26.6       5     492
-[ ]    Haskell      8.0          34.7       7     485
-[ ]    Python       6.7          41.4      10     405
-[ ]    C            6.5          47.9       2     390
-[ ]    D            6.4          54.3       3     388
-[ ]    Hare         6.3          60.6       3     378
-[ ]    Rust         6.3          66.8       5     378
-[x]    Zig          6.2          73.1       3     376
-[x]    AWK          4.7          77.8      10     283
-[x]    RCL          4.4          82.2       5     265
-[x]    Clojure      4.1          86.3       3     250
-[x]    Nix          2.7          89.0       3     164
-[x]    OCaml        2.4          91.4       2     144
-[x]    C#           2.2          93.6       1     130
-[x]    F#           1.9          95.5       1     115
-[x]    SQL          1.5          97.0       1      90
-[x]    Lua          1.4          98.4       1      87
+[ ]    Pony         9.3           9.3       4     565
+[ ]    Go           9.0          18.3       4     546
+[ ]    Nim          8.1          26.4       5     492
+[ ]    Haskell      8.0          34.4       7     485
+[ ]    Python       6.7          41.1      10     405
+[ ]    C            6.4          47.5       2     390
+[ ]    D            6.4          53.9       3     388
+[ ]    Hare         6.2          60.2       3     378
+[ ]    Rust         6.2          66.4       5     378
+[ ]    Zig          6.2          72.6       3     376
+[x]    AWK          4.7          77.3      10     283
+[x]    RCL          4.5          81.8       6     274
+[x]    Clojure      4.1          85.9       3     250
+[x]    Nix          2.7          88.6       3     164
+[x]    OCaml        2.4          91.0       2     144
+[x]    C#           2.1          93.1       1     130
+[x]    Lua          1.9          95.1       2     117
+[x]    F#           1.9          97.0       1     115
+[x]    SQL          1.5          98.4       1      90
 [x]    Unison       0.7          99.1       1      41
 [x]    Racket       0.5          99.7       1      32
 [x]    Scheme       0.3         100.0       1      21
