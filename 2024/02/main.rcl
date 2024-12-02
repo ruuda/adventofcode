@@ -1,0 +1,14 @@
+let lines = std.read_file_utf8("input.txt").split_lines();
+
+let abs = x => if x < 0: -x else: x;
+
+let is_safe = line =>
+  let cells = line.split(" ").map(x => x.parse_int());
+  let ds = [for i in std.range(1, cells.len()): cells[i] - cells[i - 1]];
+  // Count the number of unique signs of the differences, if they are all
+  // increasing or decreasing, there is only one.
+  let signs = {for d in ds: (if d < 0: -1 else: 1)};
+  let range_ok = {for d in ds: let a = abs(d); (a >= 1) and (a <= 3)};
+  (signs.len() == 1) and (not range_ok.contains(false));
+
+lines.map(is_safe).filter(x => x).len()
