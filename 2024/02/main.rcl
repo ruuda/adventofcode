@@ -10,13 +10,20 @@ let is_safe = cells =>
   // Count the number of unique signs of the differences, if they are all
   // increasing or decreasing, there is only one.
   let signs = {for d in ds: (if d < 0: -1 else: 1)};
-  let range_ok = {for d in ds: let a = abs(d); (a >= 1) and (a <= 3)};
+  let range_ok = {
+    for d in ds:
+    let a = abs(d);
+    (a >= 1) and (a <= 3)
+  };
   (signs.len() == 1) and (not range_ok.contains(false));
 
 let is_safe_damped = cells =>
   let subranges = [
-    for i in std.range(0, cells.len()): [
-      for j in std.range(0, cells.len()): if i != j: cells[j]
+    for i in std.range(0, cells.len()):
+    [
+      for j in std.range(0, cells.len()):
+      if i != j:
+      cells[j]
     ]
   ];
   // The report is safe if any subreport is safe.
