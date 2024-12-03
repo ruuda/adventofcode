@@ -3,8 +3,8 @@ let data = std.read_file_utf8("input.txt");
 // Return whether the string consists of only digits.
 let is_digits = str => str.chars().filter(c => not "0123456789".contains(c)).len() == 0;
 
-let part1 = [
-  for i, p in data.split("mul(").enumerate():
+let part1 = program => [
+  for i, p in program.split("mul(").enumerate():
   // Skip the part before the first instruction.
   if i > 0:
   let lhs_more = p.split(",");
@@ -20,4 +20,14 @@ let part1 = [
   lhs.parse_int() * rhs.parse_int()
 ];
 
-part1.sum()
+let part2 = [
+  for enableds in data.split("do()"):
+  let enabled_disabled = enableds.split("don't()");
+  for d in part1(enabled_disabled[0]):
+  d
+];
+
+{
+  part1 = part1(data).sum(),
+  part2 = part2.sum(),
+}
