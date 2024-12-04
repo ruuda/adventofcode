@@ -18,7 +18,7 @@ $INPUT
 |=  [char=@t j=@ud]
 :_  .+  j
 ^-  @ud
-::  extract the 3 base cases of substring from the grid
+::  extract the 4 base cases of substring from the grid
 ::
 =/  horz
   %^  cut  3  [j 4]  line
