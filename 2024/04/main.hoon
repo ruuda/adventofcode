@@ -1,17 +1,8 @@
 !:
 =/  input=cord
-  '''
-  MMMSXXMASM
-  MSAMXMSMSA
-  AMXSXMAAMM
-  MSAMASMSMX
-  XMASAMXAMM
-  XXAMMXXAMA
-  SMSMSASXSS
-  SAXAMASAAA
-  MAMMMXMMMM
-  MXMXAXMASX
-  '''
+'''
+$INPUT
+'''
 =/  lines  (to-wain:format input)
 ::  per line we have the match count, sum them
 %-  roll  :_  add
