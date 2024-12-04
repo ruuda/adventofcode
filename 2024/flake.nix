@@ -37,6 +37,7 @@
             pkgs.ocaml-ng.ocamlPackages_5_2.ocaml
             pkgs.ocaml-ng.ocamlPackages_5_2.ocamlformat
             pkgs.python3
+            pkgs.urbit
             pkgs.zig
             rcl.packages.${system}.default
             tokei
