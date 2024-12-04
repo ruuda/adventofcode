@@ -1,0 +1,29 @@
+From 1cec3c6d993f3ddb57a3d0a9063a9f3ec9781d3c Mon Sep 17 00:00:00 2001
+From: Ruud van Asseldonk <dev@veniogames.com>
+Date: Wed, 4 Dec 2024 21:03:26 +0100
+Subject: [PATCH] Add support for Hoon
+
+---
+ languages.json | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/languages.json b/languages.json
+index c37f1d2..d007c82 100644
+--- a/languages.json
++++ b/languages.json
+@@ -760,6 +760,12 @@
+       "quotes": [["\\\"", "\\\""]],
+       "extensions": ["HC", "hc","ZC","zc"]
+     },
++    "Hoon": {
++      "name": "Hoon",
++      "line_comment": ["::"],
++      "quotes": [["'", "'"], ["\\\"", "\\\""], ["\\\"\\\"\\\"", "\\\"\\\"\\\""], ["'''", "'''"]],
++      "extensions": ["hoon"]
++    },
+     "Html": {
+       "name": "HTML",
+       "multi_line_comments": [["<!--", "-->"]],
+-- 
+2.47.1
+

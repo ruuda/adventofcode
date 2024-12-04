@@ -22,7 +22,7 @@
           inherit src;
           outputHash = "sha256-RqDpA2NS6uUSokPlRFlekfmc7A1JiWwbQqcvrLzZyIY=";
         };
-        patches = [ ../2023/tokei-rcl.patch ];
+        patches = [ ../2023/tokei-rcl.patch ./tokei-hoon.patch ];
       });
     in
       {
@@ -43,7 +43,7 @@
             tokei
           ];
           LOCALE_ARCHIVE = "${pkgs.glibcLocales}/lib/locale/locale-archive";
-          DOTNET_ROOT = "${pkgs.dotnet-sdk_8}";
+          DOTNET_ROOT = "${pkgs.dotnet-sdk}";
         };
       };
 }
