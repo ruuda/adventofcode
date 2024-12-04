@@ -20,10 +20,10 @@
 %^  spin  (trip line)  0
 |=  [char=@t j=@ud]
 :_  .+  j
-^-  @t
-=/  hor
+^-  (list ?)
+=/  horz
   %^  cut  3  [j 4]  line
-=/  ver
+=/  vert
   ?.  (lth (add 3 i) (lent lines))  '    '
   %-  crip
   :~
@@ -44,4 +44,11 @@
     (cut 3 [(add 2 j) 1] (snag (add 2 i) lines))
     (cut 3 [(add 3 j) 1] (snag (add 3 i) lines))
   ==
-diag
+:~
+  !=(horz 'XMAS')
+  !=(vert 'XMAS')
+  !=(diag 'XMAS')
+  !=((rev 3 4 horz) 'XMAS')
+  !=((rev 3 4 vert) 'XMAS')
+  !=((rev 3 4 diag) 'XMAS')
+==
