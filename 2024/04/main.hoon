@@ -40,7 +40,7 @@
     (cut 3 [j 1] (snag (add 2 i) lines))
     (cut 3 [j 1] (snag (add 3 i) lines))
   ==
-=/  diag
+=/  nwse  :: north-west south-east
   ?.  ?&  (lth (add 3 i) (lent lines))
           (lth (add 3 j) (met 3 line))
       ==
@@ -52,6 +52,18 @@
     (cut 3 [(add 2 j) 1] (snag (add 2 i) lines))
     (cut 3 [(add 3 j) 1] (snag (add 3 i) lines))
   ==
+=/  nesw  :: north-east south-west
+  ?.  ?&  (lth (add 3 i) (lent lines))
+          (lth (add 3 j) (met 3 line))
+      ==
+    '    '
+  %-  crip
+  :~
+    (cut 3 [(add 3 j) 1] (snag (add 0 i) lines))
+    (cut 3 [(add 2 j) 1] (snag (add 1 i) lines))
+    (cut 3 [(add 1 j) 1] (snag (add 2 i) lines))
+    (cut 3 [(add 0 j) 1] (snag (add 3 i) lines))
+  ==
 ::  for the six cases, check for a match, then sum the match counts
 ::  we need to negate them because true is 0 and false is 1
 ::
@@ -60,8 +72,10 @@
 :~
   !=(horz 'XMAS')
   !=(vert 'XMAS')
-  !=(diag 'XMAS')
+  !=(nwse 'XMAS')
+  !=(nesw 'XMAS')
   !=((rev 3 4 horz) 'XMAS')
   !=((rev 3 4 vert) 'XMAS')
-  !=((rev 3 4 diag) 'XMAS')
-==
+  !=((rev 3 4 nwse) 'XMAS')
+  !=((rev 3 4 nesw) 'XMAS')
+ ==
