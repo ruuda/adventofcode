@@ -53,12 +53,14 @@
   '?'
 ::  recursively take steps
 =/  step
-|=  [p=[x=@ud y=@ud] d=@t n=@ud]
+|=  [p=[x=@ud y=@ud] d=@t hist=(set (pair @ud @ud))]
 =/  np  (npos x.p y.p d)
 ?^  np
   ::  if there is a next position, is it obstructed?
-  ?:  (obst np)  $(d (rotr d))  $(p np, n +(n))
-::  there is no next position, we are done
-n
+  ?:  (obst np)
+    $(d (rotr d))
+  $(p np, hist (~(put in hist) np))
+::  there is no next position, return number of positions visited
+~(wyt in hist)
 ::  kick off the recursion at the start position
-(step spos '^' 0)
+(step spos '^' `(set (pair @ud @ud))`~)
