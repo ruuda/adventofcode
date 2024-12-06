@@ -18,17 +18,17 @@
 ::  or [x y] for the line that does, then we pick that out with
 ::  a roll
 ::
-=/  spos  %+  roll
+=/  spos
+%-  need
+%+  roll
   =<  p
   %^  spin  lines  0
   |=  [line=cord y=@ud]
   :_  .+  y
   =/  x  (find "^" (trip line))
-  ?^  x  :_
-      =<  u  x
-    y
-  ~
-|=  [p1=noun p2=noun]
+  ^-  (unit (pair @ud @ud))
+  ?^  x  [~ [u.x y]]  ~
+|=  [p1=(unit (pair @ud @ud)) p2=(unit (pair @ud @ud))]
 ?^  p1  p1  p2
 ::  define a gate to look up whether there is an obstacle at a given position
 ::
@@ -45,9 +45,11 @@
   ?:  .=(d 'v')  ?:  (lth .+(y) maph)  [x .+(y)]  ~
   ?:  .=(d '^')  ?:  (gth y 0)  [x (dec y)]  ~
 ~
-::::  recursively take steps
-::::=/  step
-::::|=  [x=@ud y=@ud d=@t n=@ud]
+::  recursively take steps
+=/  step
+|=  [p=[x=@ud y=@ud] d=@t n=@ud]
+=/  np  (npos x.p y.p d)
+?^  np  $(p np, n +(n))  n
 ::::  =/  nx
 ::::(obst [1 1])
-(npos 9 1 'v')
+(step spos '^' 0)
