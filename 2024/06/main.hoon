@@ -31,13 +31,11 @@
 |=  [p1=(unit (pair @ud @ud)) p2=(unit (pair @ud @ud))]
 ?^  p1  p1  p2
 ::  define a gate to look up whether there is an obstacle at a given position
-::
-=/  obst
-|=  [x=@ud y=@ud]  =('x' (snag x (trip (snag y lines))))
+=/  obst  |=  [p=[x=@ud y=@ud]]  =('#' (snag x.p (trip (snag y.p lines))))
 ::  check how big the map is
 =/  mapw  (met 3 (snag 0 lines))
 =/  maph  (lent lines)
-::  find next position
+::  find next position, return ~ or the position itself
 =/  npos
 |=  [x=@ud y=@ud d=@t]
   ?:  .=(d '>')  ?:  (lth .+(x) mapw)  [.+(x) y]  ~
@@ -45,11 +43,22 @@
   ?:  .=(d 'v')  ?:  (lth .+(y) maph)  [x .+(y)]  ~
   ?:  .=(d '^')  ?:  (gth y 0)  [x (dec y)]  ~
 ~
+::  rotate right 90 degrees
+=/  rotr
+|=  d=@t
+  ?:  .=(d '>')  'v'
+  ?:  .=(d 'v')  '<'
+  ?:  .=(d '<')  '^'
+  ?:  .=(d '^')  '>'
+  '?'
 ::  recursively take steps
 =/  step
 |=  [p=[x=@ud y=@ud] d=@t n=@ud]
 =/  np  (npos x.p y.p d)
-?^  np  $(p np, n +(n))  n
-::::  =/  nx
-::::(obst [1 1])
+?^  np
+  ::  if there is a next position, is it obstructed?
+  ?:  (obst np)  $(d (rotr d))  $(p np, n +(n))
+::  there is no next position, we are done
+n
+::  kick off the recursion at the start position
 (step spos '^' 0)
