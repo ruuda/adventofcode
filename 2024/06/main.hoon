@@ -1,16 +1,7 @@
 !:
 =/  input=cord
 '''
-....#.....
-.........#
-..........
-..#.......
-.......#..
-..........
-.#..^.....
-........#.
-#.........
-......#...
+$INPUT
 '''
 =/  lines  (to-wain:format input)
 ::  locate the start position, spos, (always ^)
@@ -63,4 +54,4 @@
 ::  there is no next position, return number of positions visited
 ~(wyt in hist)
 ::  kick off the recursion at the start position
-(step spos '^' `(set (pair @ud @ud))`~)
+(step spos '^' (silt ~[spos]))
