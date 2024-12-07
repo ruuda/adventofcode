@@ -1,4 +1,4 @@
-let data = std.read_file_utf8("example.txt");
+let data = std.read_file_utf8("input.txt");
 let edges = data
   .split("\n\n")[0]
   .split_lines()
@@ -17,8 +17,8 @@ let rules_before: Dict[Int, Set[Int]] = {
   for k, v in edges.group_by(edge => edge[1]): k: {for edge in v: edge[0]}
 };
 
-let middle_pages = [
-  for book in books:
+let middle_page: (List[Int]) -> Int = book => book[(book.len() - 1) / 2];
+let is_book_ok: (List[Int]) -> Bool = book =>
   let violations = [
     for i, page in book.enumerate():
     for j in std.range(0, i):
@@ -30,13 +30,20 @@ let middle_pages = [
     // violations is not empty, so we just need to return *something* here.
     1
   ];
-  // We are only interested in books without violations, and then we need the
-  // middle page number.
-  if violations.len() == 0:
-  book[(book.len() - 1) / 2]
+  violations.len() == 0;
+
+let part1_middle_pages = [
+  for book in books:
+  if is_book_ok(book):
+  middle_page(book)
 ];
 
-let toposort_impl: (Any, List[Int], List[Int]) -> List[Int] = (self, open, closed) =>
+// For part 2, we need to sort the pages.
+let toposort_impl: (Any, List[Int], List[Int]) -> List[Int] = (
+  self,
+  open,
+  closed,
+) =>
   if open.len() == 0:
     closed
   else:
@@ -44,18 +51,36 @@ let toposort_impl: (Any, List[Int], List[Int]) -> List[Int] = (self, open, close
     // must come before them. We can place them now.
     let leaves = [
       for p in open:
-      let befores = rules_before.get(p, std.empty_set).filter(q => open.contains(q));
+      let befores = rules_before
+        .get(p, std.empty_set)
+        .filter(q => open.contains(q));
       if befores.len() == 0:
       p
     ];
-    let remainder = [for p in open: if not leaves.contains(p): p];
+    let remainder = [
+      for p in open:
+      if not leaves.contains(p):
+      p
+    ];
     let new_closed = [for p in closed: p, for p in leaves: p];
-    assert (open.len() + closed.len()) == (remainder.len() + new_closed.len()), "Number of pages is conserved.";
+    assert
+      (open.len() + closed.len()) == (remainder.len() + new_closed.len()),
+      "Number of pages is conserved.";
     self(self, remainder, new_closed);
 
-let toposort: (List[Int]) -> List[Int] = book => toposort_impl(toposort_impl, book, []);
+let toposort: (List[Int]) -> List[Int] = book => toposort_impl(
+  toposort_impl,
+  book,
+  [],
+);
+
+let part2_middle_pages = [
+  for book in books:
+  if not is_book_ok(book):
+  middle_page(toposort(book))
+];
 
 {
-  part1 = middle_pages.sum(),
-  part2 = [for book in books: toposort(book)],
+  part1 = part1_middle_pages.sum(),
+  part2 = part2_middle_pages.sum(),
 }
