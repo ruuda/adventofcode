@@ -33,6 +33,7 @@
             pkgs.dotnet-sdk
             pkgs.go
             pkgs.hare
+            pkgs.idris2
             pkgs.nim
             pkgs.ocaml-ng.ocamlPackages_5_2.ocaml
             pkgs.ocaml-ng.ocamlPackages_5_2.ocamlformat

@@ -1,6 +1,7 @@
 .cpcache/
 bin/
 obj/
+build/
 
 *.cmi
 *.cmx
