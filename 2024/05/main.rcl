@@ -51,10 +51,7 @@ let toposort_impl: (Any, List[Int], List[Int]) -> List[Int] = (
     // must come before them. We can place them now.
     let leaves = [
       for p in open:
-      let befores = rules_before
-        .get(p, std.empty_set)
-        .filter(q => open.contains(q));
-      if befores.len() == 0:
+      if rules_before.get(p, std.empty_set).all(q => not open.contains(q)):
       p
     ];
     let remainder = [
