@@ -1,4 +1,4 @@
-let data = std.read_file_utf8("input.txt");
+let data = std.read_file_utf8("example.txt");
 let edges = data
   .split("\n\n")[0]
   .split_lines()
@@ -9,8 +9,12 @@ let books = data
   .map(line => line.split(",").map(x => x.parse_int()));
 
 // Map every page number to the pages that must be ordered after it.
-let rules: Dict[Int, Set[Int]] = {
+let rules_after: Dict[Int, Set[Int]] = {
   for k, v in edges.group_by(edge => edge[0]): k: {for edge in v: edge[1]}
+};
+// Map every page number to the pages that must be ordered before it.
+let rules_before: Dict[Int, Set[Int]] = {
+  for k, v in edges.group_by(edge => edge[1]): k: {for edge in v: edge[0]}
 };
 
 let middle_pages = [
@@ -19,7 +23,7 @@ let middle_pages = [
     for i, page in book.enumerate():
     for j in std.range(0, i):
     let page_before = book[j];
-    let page_must_after: Set[Int] = rules.get(page, std.empty_set);
+    let page_must_after: Set[Int] = rules_after.get(page, std.empty_set);
     if page_must_after.contains(page_before):
     // If the set of pages that must go after `page` contains a page that goes
     // before it, then this book is bad. A non-empty list means the set of
@@ -32,4 +36,26 @@ let middle_pages = [
   book[(book.len() - 1) / 2]
 ];
 
-middle_pages.sum()
+let toposort_impl: (Any, List[Int], List[Int]) -> List[Int] = (self, open, closed) =>
+  if open.len() == 0:
+    closed
+  else:
+    // The leaves are the pages that have no constraints on other pages that
+    // must come before them. We can place them now.
+    let leaves = [
+      for p in open:
+      let befores = rules_before.get(p, std.empty_set).filter(q => open.contains(q));
+      if befores.len() == 0:
+      p
+    ];
+    let remainder = [for p in open: if not leaves.contains(p): p];
+    let new_closed = [for p in closed: p, for p in leaves: p];
+    assert (open.len() + closed.len()) == (remainder.len() + new_closed.len()), "Number of pages is conserved.";
+    self(self, remainder, new_closed);
+
+let toposort: (List[Int]) -> List[Int] = book => toposort_impl(toposort_impl, book, []);
+
+{
+  part1 = middle_pages.sum(),
+  part2 = [for book in books: toposort(book)],
+}
