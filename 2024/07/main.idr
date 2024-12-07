@@ -27,15 +27,47 @@ parseEqn line = do
   let terms = catMaybes $ forget $ map parsePositive $ split (== ' ') termsStr
   pure $ MkEqn res terms
 
+data Expr
+  = Const Nat
+  | Add Expr Nat
+  | Mul Expr Nat
+
+Show Expr where
+  show (Const n) = show n
+  show (Add expr n) = (show expr) ++ " + " ++ (show n)
+  show (Mul expr n) = (show expr) ++ " * " ++ (show n)
+
+eval : Expr -> Nat
+eval (Const n) = n
+eval (Add expr n) = (eval expr) + n
+eval (Mul expr n) = (eval expr) * n
+
+-- Generate all possible expressions for the *reversed* terms.
+exprs : List Nat -> List Expr
+exprs []  = [Const 0]
+exprs [n] = [Const n]
+exprs (n :: more) = do
+  rhs <- exprs more
+  expr <- [Add rhs n, Mul rhs n]
+  pure expr
+
 mainPure : String -> Nat
 mainPure str =
   let
-    eqns = traceVal $ catMaybes $ map parseEqn $ lines str
+    eqns = catMaybes $ map parseEqn $ lines str
+    isGood : Eqn -> Bool
+    isGood eqn = not
+      $ null
+      $ filter (\expr => eval expr == eqn.result)
+      $ exprs
+      $ reverse
+      $ eqn.terms
+    goodEqns = filter isGood eqns
   in
-    foldr (+) 0 $ map (\x => x.result) eqns
+    foldr (+) 0 $ map (\x => x.result) $ goodEqns
 
 main : IO ()
 main = do
-  readFile "example.txt" >>= \case
+  readFile "input.txt" >>= \case
     Left err => putStrLn $ show err
     Right v => putStrLn $ show $ mainPure v
