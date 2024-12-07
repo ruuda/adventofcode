@@ -1,7 +1,7 @@
 let data = std.read_file_utf8("input.txt");
 
 // Return whether the string consists of only digits.
-let is_digits = str => str.chars().filter(c => not "0123456789".contains(c)).len() == 0;
+let is_digits = str => str.chars().all(c => "0123456789".contains(c));
 
 let part1 = program => [
   for i, p in program.split("mul(").enumerate():

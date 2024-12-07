@@ -13,17 +13,13 @@ let rules: Dict[Int, Set[Int]] = {
   for k, v in edges.group_by(edge => edge[0]): k: {for edge in v: edge[1]}
 };
 
-// TODO: Type inference should propagate inside the get below so we don't need
-// to give this a name. Or maybe we should just add `std.empty_set`?
-let empty_set: Set[Void] = {};
-
 let middle_pages = [
   for book in books:
   let violations = [
     for i, page in book.enumerate():
     for j in std.range(0, i):
     let page_before = book[j];
-    let page_must_after: Set[Int] = rules.get(page, empty_set);
+    let page_must_after: Set[Int] = rules.get(page, std.empty_set);
     if page_must_after.contains(page_before):
     // If the set of pages that must go after `page` contains a page that goes
     // before it, then this book is bad. A non-empty list means the set of
