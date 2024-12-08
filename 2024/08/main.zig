@@ -19,8 +19,8 @@ fn read_input(fname: []const u8) ![][]u8 {
 }
 
 const Antenna = struct {
-    x: usize,
-    y: usize,
+    x: i32,
+    y: i32,
     frequency: u8,
 };
 
@@ -35,8 +35,8 @@ fn scan_map(map: [][]u8) ![]Antenna {
             const cell = line[x];
             if (cell == '.') continue;
             const antenna = Antenna {
-                .x = x,
-                .y = y,
+                .x = @as(i32, @intCast(x)),
+                .y = @as(i32, @intCast(y)),
                 .frequency = cell,
             };
             try result.append(antenna);
@@ -46,12 +46,41 @@ fn scan_map(map: [][]u8) ![]Antenna {
     return result.items;
 }
 
+const Antinode = struct { x: i32, y: i32 };
+
+pub fn find_antinodes(mapw: usize, maph: usize, antennas: []Antenna) !std.AutoHashMap(Antinode, bool) {
+    const allocator = std.heap.page_allocator;
+    // I can't find a set type in the stdlib, we'll abuse a hash map as the set.
+    var result = std.AutoHashMap(Antinode, bool).init(allocator);
+
+    for (0..antennas.len) |i| {
+        const ai = antennas[i];
+        for (i + 1..antennas.len) |j| {
+            const aj = antennas[j];
+            // Only antennas with the same frequency interact.
+            if (ai.frequency != aj.frequency) continue;
+            const dx = aj.x - ai.x;
+            const dy = aj.y - ai.y;
+            const node = Antinode { .x = dx, .y = dy };
+            // TODO: Check in bounds
+            if (dx > mapw) continue;
+            if (dy > maph) continue;
+            try result.put(node, true);
+        }
+    }
+
+    return result;
+}
+
 pub fn part1(fname: []const u8) !void {
     const stdout = std.io.getStdOut().writer();
     const map = try read_input(fname);
     const antennas = try scan_map(map);
-    for (antennas) |a| {
-        try stdout.print("{} {} {}\n", .{a.x, a.y, a.frequency});
+    const antinodes = try find_antinodes(map[0].len, map.len, antennas);
+
+    var an_iter = antinodes.iterator();
+    while (an_iter.next()) |an| {
+        try stdout.print("{} {}\n", .{an.key_ptr.x, an.key_ptr.y});
     }
 }
 
