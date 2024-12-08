@@ -52,7 +52,12 @@ fn in_bounds(mapw: usize, maph: usize, node: Antinode) bool {
     return (node.x >= 0) and (node.y >= 0) and (node.x < mapw) and (node.y < maph);
 }
 
-pub fn find_antinodes(mapw: usize, maph: usize, antennas: []Antenna) !std.AutoHashMap(Antinode, bool) {
+pub fn find_antinodes(
+    mapw: usize,
+    maph: usize,
+    antennas: []Antenna,
+    comptime part: u8,
+) !std.AutoHashMap(Antinode, bool) {
     const allocator = std.heap.page_allocator;
     // I can't find a set type in the stdlib, we'll abuse a hash map as the set.
     var result = std.AutoHashMap(Antinode, bool).init(allocator);
@@ -66,22 +71,39 @@ pub fn find_antinodes(mapw: usize, maph: usize, antennas: []Antenna) !std.AutoHa
             const dx = aj.x - ai.x;
             const dy = aj.y - ai.y;
 
-            const nij = Antinode { .x = ai.x - dx, .y = ai.y - dy };
-            const nji = Antinode { .x = aj.x + dx, .y = aj.y + dy };
+            if (part == 1) {
+                const nij = Antinode { .x = ai.x - dx, .y = ai.y - dy };
+                const nji = Antinode { .x = aj.x + dx, .y = aj.y + dy };
+                if (in_bounds(mapw, maph, nij)) try result.put(nij, true);
+                if (in_bounds(mapw, maph, nji)) try result.put(nji, true);
+            }
 
-            if (in_bounds(mapw, maph, nij)) try result.put(nij, true);
-            if (in_bounds(mapw, maph, nji)) try result.put(nji, true);
+            if (part == 2) {
+                var ni = Antinode { .x = ai.x, .y = ai.y };
+                while (in_bounds(mapw, maph, ni)) {
+                    try result.put(ni, true);
+                    ni.x -= dx;
+                    ni.y -= dy;
+                }
+
+                var nj = Antinode { .x = aj.x, .y = aj.y };
+                while (in_bounds(mapw, maph, nj)) {
+                    try result.put(nj, true);
+                    nj.x += dx;
+                    nj.y += dy;
+                }
+            }
         }
     }
 
     return result;
 }
 
-pub fn part1(fname: []const u8) !void {
+pub fn count_antinodes(fname: []const u8, comptime part: u8) !void {
     const stdout = std.io.getStdOut().writer();
     const map = try read_input(fname);
     const antennas = try scan_map(map);
-    const antinodes = try find_antinodes(map[0].len, map.len, antennas);
+    const antinodes = try find_antinodes(map[0].len, map.len, antennas, part);
 
     const debug_print = false;
     if (debug_print) {
@@ -90,9 +112,10 @@ pub fn part1(fname: []const u8) !void {
             try stdout.print("{} {}\n", .{an.key_ptr.x, an.key_ptr.y});
         }
     }
-    try stdout.print("Part 1: {} unique anti-nodes\n", .{antinodes.count()});
+    try stdout.print("Part {}: {} unique anti-nodes\n", .{part, antinodes.count()});
 }
 
 pub fn main() !void {
-    try part1("input.txt");
+    try count_antinodes("input.txt", 1);
+    try count_antinodes("input.txt", 2);
 }
