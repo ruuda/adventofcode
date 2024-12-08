@@ -18,10 +18,41 @@ fn read_input(fname: []const u8) ![][]u8 {
     return board.items;
 }
 
+const Antenna = struct {
+    x: usize,
+    y: usize,
+    frequency: u8,
+};
+
+// Locate all the antennas on the map.
+fn scan_map(map: [][]u8) ![]Antenna {
+    const allocator = std.heap.page_allocator;
+    var result = std.ArrayList(Antenna).init(allocator);
+
+    for (0..map.len) |y| {
+        const line = map[y];
+        for (0..line.len) |x| {
+            const cell = line[x];
+            if (cell == '.') continue;
+            const antenna = Antenna {
+                .x = x,
+                .y = y,
+                .frequency = cell,
+            };
+            try result.append(antenna);
+        }
+    }
+
+    return result.items;
+}
+
 pub fn part1(fname: []const u8) !void {
     const stdout = std.io.getStdOut().writer();
-    const board = try read_input(fname);
-    try stdout.print("Hello Zig, we meet once again. {}", .{board.len});
+    const map = try read_input(fname);
+    const antennas = try scan_map(map);
+    for (antennas) |a| {
+        try stdout.print("{} {} {}\n", .{a.x, a.y, a.frequency});
+    }
 }
 
 pub fn main() !void {
