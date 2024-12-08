@@ -48,6 +48,10 @@ fn scan_map(map: [][]u8) ![]Antenna {
 
 const Antinode = struct { x: i32, y: i32 };
 
+fn in_bounds(mapw: usize, maph: usize, node: Antinode) bool {
+    return (node.x >= 0) and (node.y >= 0) and (node.x < mapw) and (node.y < maph);
+}
+
 pub fn find_antinodes(mapw: usize, maph: usize, antennas: []Antenna) !std.AutoHashMap(Antinode, bool) {
     const allocator = std.heap.page_allocator;
     // I can't find a set type in the stdlib, we'll abuse a hash map as the set.
@@ -61,11 +65,12 @@ pub fn find_antinodes(mapw: usize, maph: usize, antennas: []Antenna) !std.AutoHa
             if (ai.frequency != aj.frequency) continue;
             const dx = aj.x - ai.x;
             const dy = aj.y - ai.y;
-            const node = Antinode { .x = dx, .y = dy };
-            // TODO: Check in bounds
-            if (dx > mapw) continue;
-            if (dy > maph) continue;
-            try result.put(node, true);
+
+            const nij = Antinode { .x = ai.x - dx, .y = ai.y - dy };
+            const nji = Antinode { .x = aj.x + dx, .y = aj.y + dy };
+
+            if (in_bounds(mapw, maph, nij)) try result.put(nij, true);
+            if (in_bounds(mapw, maph, nji)) try result.put(nji, true);
         }
     }
 
@@ -78,12 +83,16 @@ pub fn part1(fname: []const u8) !void {
     const antennas = try scan_map(map);
     const antinodes = try find_antinodes(map[0].len, map.len, antennas);
 
-    var an_iter = antinodes.iterator();
-    while (an_iter.next()) |an| {
-        try stdout.print("{} {}\n", .{an.key_ptr.x, an.key_ptr.y});
+    const debug_print = false;
+    if (debug_print) {
+        var an_iter = antinodes.iterator();
+        while (an_iter.next()) |an| {
+            try stdout.print("{} {}\n", .{an.key_ptr.x, an.key_ptr.y});
+        }
     }
+    try stdout.print("Part 1: {} unique anti-nodes\n", .{antinodes.count()});
 }
 
 pub fn main() !void {
-    try part1("example.txt");
+    try part1("input.txt");
 }
