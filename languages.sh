@@ -15,7 +15,7 @@ tokei \
   $1 == "Total" {
     total = $4
     cumulative = 0
-    print("Next,Language,%Used,%Cumulative,Files,Lines")
+    print("Next,Language,%Used,%Cumulative,Files,Lines,Verbosity")
   }
   $4 ~ /[0-9]+/ && $1 != "Total" {
     fraction = $4 / total
@@ -23,19 +23,20 @@ tokei \
     decision = cumulative / total <= 0.6666 ? "[ ]" : "[x]"
     color = cumulative / total <= 0.6666 ? "31" : "32"
     if ($1 == "Headache") $1 = "Hare";
-    printf("\x1b[%sm%s,%s,%5.1f,%5.1f,%d,%d\x1b[0m\n",
+    printf("\x1b[%sm%s,%s,%5.1f,%5.1f,%d,%d,%d\x1b[0m\n",
       color,
       decision,
       $1,
       fraction * 100.0,
       cumfraction * 100.0,
       $2,
-      $4)
+      $4,
+      $4 / $2)
     cumulative += $4
   }
   ' \
   | column \
   --table \
-  --table-right 3,4,5,6 \
+  --table-right 3,4,5,6,7 \
   --output-separator '   ' \
   --separator ,
