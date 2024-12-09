@@ -1,5 +1,5 @@
 (* Run with `ocaml main.ml` or `ocamlopt -o main main.ml && main`. *)
-let file = "example.txt"
+let file = "input.txt"
 
 (* Parse the dense disk map into a list with one element per sector.
    File id -1 represents a gap. *)
