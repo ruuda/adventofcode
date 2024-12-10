@@ -36,7 +36,8 @@ with trails (hx, hy, x, y, h) as (
     trailheads h, topomap m
   where
     m.x = h.x and m.y = h.y
-  union 
+  -- For part 1, use "union", for part 2, change it to "union all". That's it!
+  union all
   select
     t.hx, t.hy, m.x as x, m.y as y, m.h as h
   from
