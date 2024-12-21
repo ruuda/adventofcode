@@ -4,27 +4,33 @@ module Main
 
 open System
 
-let input = System.IO.File.ReadAllText("example.txt").Trim()
+let input = System.IO.File.ReadAllText("input.txt").Trim()
 
-let rec blink : String list -> String list = fun stones ->
-  match stones with
-    | "0" :: tail -> "1" :: blink tail
-    | n :: tail ->
-      let nl = n.Length
-      if (nl % 2) = 0 then
-        n.Substring(0, nl / 2) :: n.Substring(nl / 2, nl / 2) :: blink tail
-      else
-        (System.Int64.Parse(n) * 2024L).ToString() :: blink tail
-    | [] -> []
+let cut : String -> String = fun s ->
+  match s.TrimStart('0') with
+    | "" -> "0"
+    | st -> st
 
-[<TailCall>]
-let rec blinkn : int -> String list -> String list = fun n stones ->
+// Return the number of stones after n blinks, when starting with `stone`.
+let rec blinkn : int -> String -> int = fun n stone ->
   match n with
-    | 0 -> stones
-    | _ -> blinkn (n - 1) (blink stones)
+    | 0 ->
+      // printfn "%s " stone
+      1
+    | _ ->
+      match stone with
+        | "0" -> blinkn (n - 1) "1"
+        | _ ->
+          let k = stone.Length
+          if (k % 2) = 0 then
+            (blinkn (n - 1) (stone.Substring(0, k / 2))) +
+              (blinkn (n - 1) (cut (stone.Substring(k / 2, k / 2))))
+          else
+            blinkn (n - 1) ((System.Int64.Parse(stone) * 2024L).ToString())
+       
 
 [<EntryPoint>]
 let main args =
-  let result = blinkn 2 (input.Split(" ") |> Array.toList)
-  printfn "%s" ((List.length result).ToString())
+  let result = input.Split(" ") |> Array.map (blinkn 25) |> Array.sum
+  printfn "%i" result
   0
