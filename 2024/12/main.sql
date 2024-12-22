@@ -2,7 +2,7 @@
 
 -- Import the file with numbered lines.
 create table lines (plots text);
-.import --csv 'example1.txt' lines
+.import --csv 'input.txt' lines
 create table y_lines (y integer primary key autoincrement, plots text);
 insert into y_lines (plots) select plots from lines;
 
@@ -27,30 +27,33 @@ select
 from
   y_lines, xs;
 
+create index ix_map_x on map (x);
+create index ix_map_y on map (y);
+
 -- Now for every plot, we find the minimal plot id of the area that it is part
 -- of, by continuing to add rows with a lower id if we find neighbors.
-with areas as (
+with regions as not materialized (
   select x, y, t, id from map
-  union all
+  union
   select
-    case when a1.id < a2.id then a1.x else a2.x end as x,
-    case when a1.id < a2.id then a1.y else a2.y end as y,
-    a1.t,
-    case when a1.id < a2.id then a1.id else a2.id end as id
+    a2.x, a2.y, a1.t, a1.id
   from
-    areas a1, map a2
+    regions a1, map a2
   where
     (a1.t = a2.t)
+    and (a1.id < a2.id)
     and (
       (a1.x + 1 = a2.x and a1.y = a2.y) or
-      (a1.x = a2.x and a1.y + 1 = a2.y)
+      (a1.x - 1 = a2.x and a1.y = a2.y) or
+      (a1.x = a2.x and a1.y + 1 = a2.y) or
+      (a1.x = a2.x and a1.y - 1 = a2.y)
     )
 ),
-merged_plots as (
+merged_plots as materialized (
   select
     min(id) as id, min(t) as t, x, y
   from
-    areas
+    regions
   group by
     x, y
 ),
@@ -93,4 +96,4 @@ total_cost as (
     a.id = p.id
 )
 
-select * from total_cost;
+select sum(cost) from total_cost;
