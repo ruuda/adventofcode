@@ -2,7 +2,7 @@
 
 -- Import the file with numbered lines.
 create table lines (plots text);
-.import --csv 'input.txt' lines
+.import --csv 'example3.txt' lines
 create table y_lines (y integer primary key autoincrement, plots text);
 insert into y_lines (plots) select plots from lines;
 
@@ -32,13 +32,13 @@ create index ix_map_y on map (y);
 
 -- Now for every plot, we find the minimal plot id of the area that it is part
 -- of, by continuing to add rows with a lower id if we find neighbors.
-with regions as not materialized (
+with pre_regions as not materialized (
   select x, y, t, id from map
   union
   select
     a2.x, a2.y, a1.t, a1.id
   from
-    regions a1, map a2
+    pre_regions a1, map a2
   where
     (a1.t = a2.t)
     and (a1.id < a2.id)
@@ -49,32 +49,32 @@ with regions as not materialized (
       (a1.x = a2.x and a1.y - 1 = a2.y)
     )
 ),
-merged_plots as materialized (
+regions as materialized (
   select
     min(id) as id, min(t) as t, x, y
   from
-    regions
+    pre_regions
   group by
     x, y
 ),
 fences as (
   select
     id,
-    -- If the neighbor is a different merged plot, then we have a fence.
+    -- If the neighbor is a different region, then we have a fence.
     4
-    - (select count(*) from merged_plots n where n.id = m.id and n.x = m.x and n.y = m.y - 1)
-    - (select count(*) from merged_plots e where e.id = m.id and e.x = m.x + 1 and e.y = m.y)
-    - (select count(*) from merged_plots s where s.id = m.id and s.x = m.x and s.y = m.y + 1)
-    - (select count(*) from merged_plots w where w.id = m.id and w.x = m.x - 1 and w.y = m.y)
+    - (select count(*) from regions n where n.id = m.id and n.x = m.x and n.y = m.y - 1)
+    - (select count(*) from regions e where e.id = m.id and e.x = m.x + 1 and e.y = m.y)
+    - (select count(*) from regions s where s.id = m.id and s.x = m.x and s.y = m.y + 1)
+    - (select count(*) from regions w where w.id = m.id and w.x = m.x - 1 and w.y = m.y)
     as n_fences
   from
-    merged_plots m
+    regions m
 ),
 total_area as (
   select
     id, t, count(*) as area
   from
-    merged_plots
+    regions
   group by
     id, t
 ),
