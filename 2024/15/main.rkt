@@ -2,16 +2,24 @@
 
 (define ip (open-input-file "example.txt" #:mode 'text))
 
-(let loop ()
-  (display "Reading one line ... ")
-  (let ([line (read-line ip 'any)])
-    (cond
-      [(eq? line eof)
-       (display "Got EOF")]
-      [else
-       (display "Got line: ")
-       (display line)
-       (display "\n")
-       (loop)])))
+(define-values
+  (territory-list moves-list)
+  (let loop (
+    [mode 'territory]
+    [territory '()]
+    [moves '()])
+    (let ([line (read-line ip 'any)])
+      (cond
+        [(eq? line eof)
+         (values territory moves)]
+        [(equal? line "")
+         (loop 'moves territory moves)]
+        [(equal? mode 'territory)
+         (loop 'territory (cons line territory) moves)]
+        [else
+         (loop 'moves territory (cons line moves))]))))
 
-(display "\nDone\n")
+(define territory (reverse territory-list))
+(define moves (string-join (reverse moves-list) ""))
+
+(print moves)
