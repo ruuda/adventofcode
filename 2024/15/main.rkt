@@ -1,7 +1,6 @@
 #lang racket
 
-(define ip (open-input-file "example.txt" #:mode 'text))
-
+(define ip (open-input-file "example1.txt" #:mode 'text))
 (define-values
   (territory-list moves-list)
   (let loop (
@@ -21,5 +20,7 @@
 
 (define territory (reverse territory-list))
 (define moves (string-join (reverse moves-list) ""))
+
+
 
 (print moves)
