@@ -1,6 +1,6 @@
 #lang racket
 
-(define ip (open-input-file "example1.txt" #:mode 'text))
+(define ip (open-input-file "input.txt" #:mode 'text))
 (define-values
   (territory-list moves-list)
   (let loop (
@@ -76,14 +76,12 @@
        #t]
       [else #f])))
 
-(print (start-pos territory))
-(print (gps-sum '("#######" "#...O.." "#......")))
-(print territory)
-(move territory 2 2 #\>)
-(print territory)
-(move territory 3 2 #\>)
-(print territory)
-(move territory 4 2 #\>)
-(print territory)
-(move territory 5 2 #\>)
-(print territory)
+(for ([dir (in-string moves)])
+  (letrec ([xy (start-pos territory)] [x (car xy)] [y (cdr xy)])
+    (move territory x y dir)
+    (print territory)
+    (display "\n")
+    #t))
+
+(print (gps-sum territory))
+(display "\n")
