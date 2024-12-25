@@ -27,15 +27,33 @@
 (define (put-at x y v board)
   (string-set! (list-ref board y) x v))
 
+(define (next-pos x y dir)
+  (cond
+    [(equal? dir #\^) (values x (- y 1))]
+    [(equal? dir #\v) (values x (+ y 1))]
+    [(equal? dir #\<) (values (- x 1) y)]
+    [(equal? dir #\>) (values (+ x 1) y)]))
+
+; Locate the position of the @ in the board.
+(define (start-pos board)
+  (for/or ([line (in-list board)] [y (in-naturals)])
+    (for/or ([char (in-string line)] [x (in-naturals)])
+      (cond
+        [(equal? char #\@) (cons x y)]
+        [else #f]))))
+
+; Compute the GPS value of the board.
+(define (gps-sum board)
+  (for/sum ([line (in-list board)] [y (in-naturals)])
+    (for/sum ([char (in-string line)] [x (in-naturals)])
+      (cond
+        [(equal? char #\O) (+ (* 100 y) x)]
+        [else 0]))))
+
 ; Move the thing at position (x, y) in the direction `dir` if possible; returns
 ; whether position (x, y) is now empty, and mutates the board.
 (define (move board x y dir)
-  (define-values (nx ny)
-    (cond
-      [(equal? dir #\^) (values x (- y 1))]
-      [(equal? dir #\v) (values x (+ y 1))]
-      [(equal? dir #\<) (values (- x 1) y)]
-      [(equal? dir #\>) (values (+ x 1) y)]))
+  (define-values (nx ny) (next-pos x y dir))
   (let
     ([at-pos (lookup board x y)]
      [at-npos (lookup board nx ny)])
@@ -58,6 +76,8 @@
        #t]
       [else #f])))
 
+(print (start-pos territory))
+(print (gps-sum '("#######" "#...O.." "#......")))
 (print territory)
 (move territory 2 2 #\>)
 (print territory)
