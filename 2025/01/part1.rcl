@@ -1,0 +1,29 @@
+let data = std.read_file_utf8("example.txt");
+let rotations = [
+  for line in data.split_lines():
+  (
+    if line.starts_with("L"):
+      -line.remove_prefix("L").parse_int()
+    else:
+      line.remove_prefix("R").parse_int()
+  )
+];
+let mod100_impl = (f, x) =>
+  if x < 0:
+    f(f, x + 100)
+  else:
+    if x >= 100: f(f, x - 100) else: x;
+let mod100 = x => mod100_impl(mod100_impl, x);
+let part1 = rotations
+  .fold(
+    { dial = 50, nzero = 0 },
+    (state, r) =>
+      let dial = mod100(state.dial + r);
+      assert dial >= 0: "Must be positive";
+      assert dial < 100: "Bust be mod 100";
+      {
+        dial = dial,
+        nzero = state.nzero + (if dial == 0: 1 else: 0),
+      },
+  );
+part1
