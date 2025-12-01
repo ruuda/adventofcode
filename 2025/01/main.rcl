@@ -1,0 +1,60 @@
+let data = std.read_file_utf8("input.txt");
+let rotations = [
+  for line in data.split_lines():
+  (
+    if line.starts_with("L"):
+      -line.remove_prefix("L").parse_int()
+    else:
+      line.remove_prefix("R").parse_int()
+  )
+];
+
+let mod100_impl = (f, x) =>
+  if x < 0:
+    f(f, x + 100)
+  else:
+    if x >= 100: f(f, x - 100) else: x;
+let mod100 = x => mod100_impl(mod100_impl, x);
+
+let final = (x, n, t) =>
+  let dial = x + t;
+  if dial == 0:
+    { dial = 0, nzero = n + 1 }
+  else:
+    if dial >= 100:
+      { dial = dial - 100, nzero = n + 1 }
+    else:
+      if dial < 0:
+        { dial = dial + 100, nzero = n + (if x == 0: 0 else: 1) }
+      else:
+        { dial = dial, nzero = n };
+
+let tick_count_impl = (f, x, n, t) =>
+  if t > 100:
+    f(f, x, n + 1, t - 100)
+  else:
+    if t < (-100): f(f, x, n + 1, t + 100) else: final(x, n, t);
+
+let tick_count = (x, n, t) => tick_count_impl(tick_count_impl, x, n, t);
+
+let initial = { dial = 50, nzero = 0 };
+{
+  part1 = rotations
+    .fold(
+      initial,
+      (state, r) =>
+        let dial = mod100(state.dial + r);
+        assert dial >= 0: "Must be positive";
+        assert dial < 100: "Bust be mod 100";
+        {
+          dial = dial,
+          nzero = state.nzero + (if dial == 0: 1 else: 0),
+        },
+    ),
+
+  part2 = rotations
+    .fold(
+      initial,
+      (state, t) => tick_count(state.dial, state.nzero, t),
+    ),
+}
