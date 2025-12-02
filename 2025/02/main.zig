@@ -34,9 +34,45 @@ fn read_input(fname: []const u8) ![]Range {
     return data.items;
 }
 
+fn count_duplicates(low: u64, high: u64) u64 {
+    const min_digits: u64 = (std.math.log10_int(low) + 1) / 2;
+    const max_digits: u64 = (std.math.log10_int(high) + 1) / 2;
+
+    var n_digits = min_digits;
+    var sum: u64 = 0;
+
+    while (n_digits <= max_digits) {
+        const i_min = std.math.pow(u64, 10, n_digits -| 1);
+        const i_max = std.math.pow(u64, 10, n_digits);
+        print("  {} digits, checking: {} - {}\n", .{ n_digits, i_min, i_max });
+        var i = i_min;
+
+        // TODO: We can tighten the lower bound.
+
+        while (i < i_max) {
+            const dupdup = i + i * i_max;
+            if (dupdup < low) {
+                i += 1;
+                continue;
+            }
+            if (dupdup > high) break;
+            print("  found {} in {}-{}\n", .{ dupdup, low, high });
+            sum += dupdup;
+            i += 1;
+        }
+
+        n_digits += 1;
+    }
+
+    return sum;
+}
+
 pub fn main() !void {
-    const data = try read_input("example.txt");
+    const data = try read_input("input.txt");
+    var sum: u64 = 0;
     for (data) |item| {
         print("{}-{}\n", .{ item.low, item.high });
+        sum += count_duplicates(item.low, item.high);
     }
+    print("Sum: {}\n", .{sum});
 }
