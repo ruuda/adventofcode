@@ -18,12 +18,17 @@ fn read_input(fname: []const u8) ![]Range {
 
     while (true) {
         const part = try reader.interface.takeDelimiterExclusive(',');
-        if (part.len == 0) break;
-        var part_iter = std.mem.splitScalar(u8, part, '-');
+        const part_trim = std.mem.trim(u8, part, "\n ");
+
+        if (part_trim.len == 0) break;
+
+        var part_iter = std.mem.splitScalar(u8, part_trim, '-');
         const low = try std.fmt.parseInt(u64, part_iter.first(), 10);
         const high = try std.fmt.parseInt(u64, part_iter.next().?, 10);
 
         try data.append(allocator, Range{ .low = low, .high = high });
+
+        _ = reader.interface.discardDelimiterInclusive(',') catch break;
     }
 
     return data.items;
@@ -32,6 +37,6 @@ fn read_input(fname: []const u8) ![]Range {
 pub fn main() !void {
     const data = try read_input("example.txt");
     for (data) |item| {
-        print("{}-{}", .{ item.low, item.high });
+        print("{}-{}\n", .{ item.low, item.high });
     }
 }
