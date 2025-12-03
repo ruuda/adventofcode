@@ -22,36 +22,41 @@ fn read_input(fname: []const u8) ![][]u8 {
     return data.items;
 }
 
-fn max_joltage(batteries: []const u8) u32 {
-    var max_first: u32 = 0;
-    var max_i: usize = 0;
+fn max_joltage(comptime n_digits: u64, batteries: []const u8) u64 {
+    var start_i: usize = 0;
+    var joltage: u64 = 0;
 
-    for (0..batteries.len - 1) |i| {
-        const x = @as(u32, batteries[i] - '0');
-        if (x <= max_first) continue;
-        max_first = x;
-        max_i = i;
+    for (0..n_digits) |digit| {
+        var max_x: u64 = 0;
+        var max_i: usize = start_i;
+
+        for (start_i..batteries.len - n_digits + digit + 1) |i| {
+            const x = @as(u64, batteries[i] - '0');
+            if (x <= max_x) continue;
+            max_x = x;
+            max_i = i;
+        }
+
+        joltage = joltage * 10 + max_x;
+        start_i = max_i + 1;
     }
 
-    var max_second: u32 = 0;
-    for (max_i + 1..batteries.len) |i| {
-        const x = @as(u32, batteries[i] - '0');
-        if (x <= max_second) continue;
-        max_second = x;
-    }
-
-    return max_first * 10 + max_second;
+    return joltage;
 }
 
 pub fn main() !void {
     const data = try read_input("input.txt");
 
-    var part1: u32 = 0;
+    var part1: u64 = 0;
+    var part2: u64 = 0;
     for (data) |battery| {
-        const mj = max_joltage(battery);
-        part1 += mj;
-        print("Line: {s} -> {}\n", .{ battery, mj });
+        const mj1 = max_joltage(2, battery);
+        const mj2 = max_joltage(12, battery);
+        part1 += mj1;
+        part2 += mj2;
+        print("Line: {s} -> {} {}\n", .{ battery, mj1, mj2 });
     }
 
     print("Part 1: {}\n", .{part1});
+    print("Part 2: {}\n", .{part2});
 }
