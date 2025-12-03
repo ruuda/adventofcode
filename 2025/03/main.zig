@@ -22,10 +22,36 @@ fn read_input(fname: []const u8) ![][]u8 {
     return data.items;
 }
 
-pub fn main() !void {
-    const data = try read_input("example.txt");
+fn max_joltage(batteries: []const u8) u32 {
+    var max_first: u32 = 0;
+    var max_i: usize = 0;
 
-    for (data) |item| {
-        print("Line: {s}\n", .{item});
+    for (0..batteries.len - 1) |i| {
+        const x = @as(u32, batteries[i] - '0');
+        if (x <= max_first) continue;
+        max_first = x;
+        max_i = i;
     }
+
+    var max_second: u32 = 0;
+    for (max_i + 1..batteries.len) |i| {
+        const x = @as(u32, batteries[i] - '0');
+        if (x <= max_second) continue;
+        max_second = x;
+    }
+
+    return max_first * 10 + max_second;
+}
+
+pub fn main() !void {
+    const data = try read_input("input.txt");
+
+    var part1: u32 = 0;
+    for (data) |battery| {
+        const mj = max_joltage(battery);
+        part1 += mj;
+        print("Line: {s} -> {}\n", .{ battery, mj });
+    }
+
+    print("Part 1: {}\n", .{part1});
 }
