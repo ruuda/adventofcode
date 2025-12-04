@@ -21,7 +21,7 @@ fn read_input(fname: []const u8) ![][]u8 {
     return data.items;
 }
 
-fn count_adjacent(map: [][]u8) u32 {
+fn remove_adjacent(map: [][]u8) u32 {
     const w = map[0].len;
     const h = map.len;
     const dp = [3]i32{ -1, 0, 1 };
@@ -33,11 +33,8 @@ fn count_adjacent(map: [][]u8) u32 {
             const ix: i32 = @intCast(x);
 
             // We are only interested in cells that contain a roll ('@'),
-            // empty cells we can skip.
-            if (map[y][x] == '.') {
-                print(".", .{});
-                continue;
-            }
+            // empty cells ('.') we can skip.
+            if (map[y][x] != '@') continue;
 
             var num_adjacent: u32 = 0;
 
@@ -54,14 +51,24 @@ fn count_adjacent(map: [][]u8) u32 {
                         }
                     }
 
-                    num_adjacent += if (p == '@') 1 else 0;
+                    num_adjacent += if (p != '.') 1 else 0;
                 }
             }
-            print("{}", .{num_adjacent});
 
-            count += if (num_adjacent < 4) 1 else 0;
+            // If the roll can be removed, count it, but also mark it for
+            // removal.
+            if (num_adjacent < 4) {
+                count += 1;
+                map[y][x] = 'x';
+            }
         }
-        print("\n", .{});
+    }
+
+    // After marking rolls for removal, we remove them.
+    for (map, 0..) |line, y| {
+        for (line, 0..) |cell, x| {
+            if (cell == 'x') map[y][x] = '.';
+        }
     }
 
     return count;
@@ -70,11 +77,15 @@ fn count_adjacent(map: [][]u8) u32 {
 pub fn main() !void {
     const data = try read_input("input.txt");
 
-    for (data) |line| {
-        print("{s}\n", .{line});
-    }
-    print("\n\n", .{});
+    var count = remove_adjacent(data);
+    print("Part 1: {}\n", .{count});
 
-    const part1 = count_adjacent(data);
-    print("{}\n", .{part1});
+    while (true) {
+        const n = remove_adjacent(data);
+        print("Removing {} more ...\n", .{n});
+        if (n == 0) break;
+        count += n;
+    }
+
+    print("Part 2: {}\n", .{count});
 }
