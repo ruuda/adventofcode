@@ -1,0 +1,13 @@
+let input = std.read_file_utf8("input.txt");
+let ranges = [
+  for line in input.split("\n\n")[0].split_lines():
+  line.split("-").map(x => x.parse_int())
+];
+let ingredients = [
+  for line in input.split("\n\n")[1].split_lines(): line.parse_int()
+];
+let is_fresh = id => ranges.any(r => (id >= r[0]) and (id <= r[1]));
+
+{
+  part1 = ingredients.filter(is_fresh).len(),
+}
