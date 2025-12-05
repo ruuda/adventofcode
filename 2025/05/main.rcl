@@ -8,6 +8,20 @@ let ingredients = [
 ];
 let is_fresh = id => ranges.any(r => (id >= r[0]) and (id <= r[1]));
 
+// For part 2, first we break up all ranges into non-overlapping ranges, and
+// then we deduplicate them by putting them in a set. We also move from the
+// both-inclusive endpoints to half-open ranges.
+let half_open = [for r in ranges: [r[0], r[1] + 1]];
+let split_points = { for r in half_open: ..r };
+let split_ranges = {
+  for r in half_open:
+  let midpoints = split_points.filter(k => (k > r[0]) and (k < r[1]));
+  let endpoints = [r[0], ..midpoints, r[1]];
+  for i in std.range(0, endpoints.len() - 1):
+  [endpoints[i], endpoints[i + 1]]
+};
+
 {
   part1 = ingredients.filter(is_fresh).len(),
+  part2 = [for r in split_ranges: r[1] - r[0]].sum(),
 }
