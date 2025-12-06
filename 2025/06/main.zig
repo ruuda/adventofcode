@@ -105,12 +105,9 @@ fn evalPart2(input: Input) !u64 {
         }
 
         if (empty) {
-            print("flush += {}\n", .{acc});
             result += acc;
             continue;
         }
-
-        print("{} {c} {}\n", .{ acc, op, num });
 
         switch (op) {
             '+' => acc = acc + num,
@@ -120,7 +117,6 @@ fn evalPart2(input: Input) !u64 {
     }
 
     // Don't forget to flush the final accumulator.
-    print("flush += {}\n", .{acc});
     return result + acc;
 }
 
