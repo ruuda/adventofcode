@@ -65,20 +65,25 @@ fn countSplits(map: [][]u8) !Result {
                         nSplits += 1;
                     },
                     '|' => {
-                        // There is already a beam, nothing to do here.
+                        // The beam is already there because of a split in this
+                        // row, but we need to add all possible ways of reaching
+                        // this cell where the beam came from above.
+                        paths[x] += p;
                     },
                     else => print("Unexpected cell at {}, {}: {c}\n", .{ x, y, cell }),
                 }
             }
         }
+        var k: u64 = 0;
         for (paths) |pp| {
             if (pp > 0) {
-                print("{:2} ", .{pp});
+                print("{:3} ", .{pp});
             } else {
-                print("   ", .{});
+                print("    ", .{});
             }
+            k += pp;
         }
-        print("\n", .{});
+        print(" -> {}\n", .{k});
     }
 
     // For each of the reachable final beam positions, sum the number of ways to
@@ -90,7 +95,7 @@ fn countSplits(map: [][]u8) !Result {
 }
 
 pub fn main() !void {
-    const data = try readInput("example.txt");
+    const data = try readInput("input.txt");
     const result = try countSplits(data);
     print("Part 1: {}\n", .{result.nSplits});
     print("Part 2: {}\n", .{result.nTimelines});
