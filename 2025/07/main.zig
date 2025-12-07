@@ -74,16 +74,6 @@ fn countSplits(map: [][]u8) !Result {
                 }
             }
         }
-        var k: u64 = 0;
-        for (paths) |pp| {
-            if (pp > 0) {
-                print("{:3} ", .{pp});
-            } else {
-                print("    ", .{});
-            }
-            k += pp;
-        }
-        print(" -> {}\n", .{k});
     }
 
     // For each of the reachable final beam positions, sum the number of ways to
