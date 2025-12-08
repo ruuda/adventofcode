@@ -2,10 +2,10 @@ const std = @import("std");
 const print = @import("std").debug.print;
 
 const Point = struct {
-    coord: [3]f32,
+    coord: [3]f64,
 
-    fn sqr_dist(self: Point, other: Point) f32 {
-        var res: f32 = 0.0;
+    fn sqr_dist(self: Point, other: Point) f64 {
+        var res: f64 = 0.0;
         inline for (0..3) |i| {
             const d = self.coord[i] - other.coord[i];
             res += d * d;
@@ -27,11 +27,11 @@ fn readInput(fname: []const u8) ![]Point {
 
     while (true) {
         const line = reader.interface.takeDelimiterExclusive('\n') catch break;
-        var coord = [3]f32{ 0.0, 0.0, 0.0 };
+        var coord = [3]f64{ 0.0, 0.0, 0.0 };
         var it = std.mem.splitScalar(u8, line, ',');
         inline for (0..3) |i| {
             const sx = it.next() orelse break;
-            coord[i] = try std.fmt.parseFloat(f32, sx);
+            coord[i] = try std.fmt.parseFloat(f64, sx);
         }
         try data.append(allocator, Point{ .coord = coord });
         _ = reader.interface.discardDelimiterInclusive('\n') catch break;
@@ -41,7 +41,7 @@ fn readInput(fname: []const u8) ![]Point {
 }
 
 const Pair = struct {
-    d2: f32,
+    d2: f64,
     ia: usize,
     ib: usize,
 };
@@ -105,11 +105,6 @@ fn countClusters(comptime nWires: u32, points: []Point) !void {
         const c1 = ids[pair.ia];
         const c2 = ids[pair.ib];
 
-        // print("Connecting {} {} {} to {} {} {}\n", .{
-        //     p1.coord[0], p1.coord[1], p1.coord[2],
-        //     p2.coord[0], p2.coord[1], p2.coord[2],
-        // });
-
         // If they are already part of the same cluster then we don't connect
         // them.
         if (c1 == c2) continue;
@@ -126,7 +121,7 @@ fn countClusters(comptime nWires: u32, points: []Point) !void {
             const p1 = points[pair.ia];
             const p2 = points[pair.ib];
             const result = p1.coord[0] * p2.coord[0];
-            print("Part 2: {}\n", .{result});
+            print("Part 2: {} at wire {} \n", .{ result, wiresSpent });
             break;
         }
     }
