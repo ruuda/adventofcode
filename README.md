@@ -53,6 +53,7 @@ Some languages that I still want to try:
  * [x] Hare
  * [x] Hoon
  * [x] Idris
+ * [ ] Julia
  * [x] Nim
  * [x] OCaml
  * [x] Pony
