@@ -76,9 +76,9 @@ fn countClusters(comptime nWires: u32, points: []Point) !u64 {
 
     // Now assign every point to its own cluster. Clusters are identified by
     // an integer id.
-    var ids = try std.ArrayList(u32).initCapacity(allocator, points.len);
+    var ids = try allocator.alloc(u32, points.len);
     for (0..points.len) |i| {
-        ids.appendAssumeCapacity(@truncate(i));
+        ids[i] = @truncate(i);
     }
 
     // For the `nWires` closest points, we put them in the same cluster by
@@ -86,25 +86,44 @@ fn countClusters(comptime nWires: u32, points: []Point) !u64 {
     var wiresSpent: u32 = 0;
     for (0..pairs.items.len) |pp| {
         const pair = pairs.items[pp];
-        const c1 = ids.items[pair.ia];
-        const c2 = ids.items[pair.ib];
+        const c1 = ids[pair.ia];
+        const c2 = ids[pair.ib];
 
         // If they are already part of the same cluster then we don't connect
         // them.
         if (c1 == c2) continue;
 
-        // If they are not part of the same cluster, then we replace cluster id
-        // with the lower id everywhere.
-        const c = if (c1 < c2) c1 else c2;
+        // If they are not part of the same cluster, then we join them to the
+        // same cluster, arbitrarily picking c1 as the id for both.
         for (0..points.len) |i| {
-            if (ids.items[i] == c1 or ids.items[i] == c2) ids.items[i] = c;
+            if (ids[i] == c2) ids[i] = c1;
         }
+
+        const p1 = points[pair.ia];
+        const p2 = points[pair.ib];
+        print("Connecting {} {} {} to {} {} {}\n", .{
+            p1.coord[0], p1.coord[1], p1.coord[2],
+            p2.coord[0], p2.coord[1], p2.coord[2],
+        });
+
+        for (ids) |c| {
+            print("{} ", .{c});
+        }
+        print("\n", .{});
 
         wiresSpent += 1;
         if (wiresSpent >= nWires) break;
     }
 
-    for (ids.items) |c| {
+    // Count how many members every cluster has.
+    var counts = try allocator.alloc(u32, points.len);
+    @memset(counts, 0);
+
+    for (ids) |id| {
+        counts[id] += 1;
+    }
+
+    for (counts) |c| {
         print("{} ", .{c});
     }
     print("\n", .{});
