@@ -55,7 +55,7 @@ fn ltPair(ctx: void, lhs: Pair, rhs: Pair) bool {
     return lhs.ib < lhs.ib;
 }
 
-fn countClusters(comptime nWires: u32, points: []Point) !u64 {
+fn countClusters(comptime nWires: u32, points: []Point) !void {
     const allocator = std.heap.page_allocator;
     // Yep it's quadratic, but for only 1000 pairs we don't really need to bring
     // out the spatial data structures.
@@ -84,56 +84,55 @@ fn countClusters(comptime nWires: u32, points: []Point) !u64 {
     for (0..pairs.items.len) |pp| {
         // At first I misunderstood the exercise, but we count a wire when we
         // *inspect* the closest pair, even if we end up not connecting them.
-        if (wiresSpent >= nWires) break;
+        // Once we are at that point, part 1 triggers.
+        if (wiresSpent == nWires) {
+            // Count how many members every cluster has.
+            var counts = try allocator.alloc(u32, points.len);
+            @memset(counts, 0);
+            for (ids) |id| counts[id] += 1;
+
+            // Sort cluster member counts descending.
+            std.mem.sort(u32, counts, {}, std.sort.desc(u32));
+
+            var result: u32 = 1;
+            for (0..3) |i| result *= counts[i];
+            print("Part 1: {}\n", .{result});
+        }
+
         wiresSpent += 1;
 
         const pair = pairs.items[pp];
         const c1 = ids[pair.ia];
         const c2 = ids[pair.ib];
 
-        const p1 = points[pair.ia];
-        const p2 = points[pair.ib];
-        print("Connecting {} {} {} to {} {} {}\n", .{
-            p1.coord[0], p1.coord[1], p1.coord[2],
-            p2.coord[0], p2.coord[1], p2.coord[2],
-        });
+        // print("Connecting {} {} {} to {} {} {}\n", .{
+        //     p1.coord[0], p1.coord[1], p1.coord[2],
+        //     p2.coord[0], p2.coord[1], p2.coord[2],
+        // });
 
         // If they are already part of the same cluster then we don't connect
         // them.
-        if (c1 == c2) {
-            print("SKIP\n", .{});
-            continue;
-        }
+        if (c1 == c2) continue;
 
         // If they are not part of the same cluster, then we join them to the
         // same cluster, arbitrarily picking c1 as the id for both.
+        var isComplete = true;
         for (0..points.len) |i| {
             if (ids[i] == c2) ids[i] = c1;
+            if (ids[i] != c1) isComplete = false;
         }
 
-        for (ids) |c| print("{} ", .{c});
-        print("\n", .{});
+        if (isComplete) {
+            const p1 = points[pair.ia];
+            const p2 = points[pair.ib];
+            const result = p1.coord[0] * p2.coord[0];
+            print("Part 2: {}\n", .{result});
+            break;
+        }
     }
-
-    // Count how many members every cluster has.
-    var counts = try allocator.alloc(u32, points.len);
-    @memset(counts, 0);
-    for (ids) |id| counts[id] += 1;
-
-    // Sort cluster member counts descending.
-    std.mem.sort(u32, counts, {}, std.sort.desc(u32));
-
-    for (counts) |c| print("{} ", .{c});
-    print("\n", .{});
-
-    var result: u32 = 1;
-    for (0..3) |i| result *= counts[i];
-
-    return result;
 }
 
 pub fn main() !void {
     const data = try readInput("input.txt");
-    const part1 = try countClusters(1000, data);
-    print("Part 1: {}\n", .{part1});
+    try countClusters(1000, data);
 }
