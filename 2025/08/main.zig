@@ -55,7 +55,7 @@ fn ltPair(ctx: u64, lhs: Pair, rhs: Pair) bool {
     return lhs.ib < lhs.ib;
 }
 
-fn countClusters(comptime nWires: u64, points: []Point) !u64 {
+fn countClusters(comptime nWires: u32, points: []Point) !u64 {
     const allocator = std.heap.page_allocator;
     // Yep it's quadratic, but for only 1000 pairs we don't really need to bring
     // out the spatial data structures.
@@ -74,9 +74,40 @@ fn countClusters(comptime nWires: u64, points: []Point) !u64 {
     const dummyContext: u64 = 0;
     std.sort.pdq(Pair, pairs.items, dummyContext, ltPair);
 
-    for (pairs.items) |p| {
-        print("{} {} {}\n", .{ p.d2, p.ia, p.ib });
+    // Now assign every point to its own cluster. Clusters are identified by
+    // an integer id.
+    var ids = try std.ArrayList(u32).initCapacity(allocator, points.len);
+    for (0..points.len) |i| {
+        ids.appendAssumeCapacity(@truncate(i));
     }
+
+    // For the `nWires` closest points, we put them in the same cluster by
+    // turning the id into the id of the
+    var wiresSpent: u32 = 0;
+    for (0..pairs.items.len) |pp| {
+        const pair = pairs.items[pp];
+        const c1 = ids.items[pair.ia];
+        const c2 = ids.items[pair.ib];
+
+        // If they are already part of the same cluster then we don't connect
+        // them.
+        if (c1 == c2) continue;
+
+        // If they are not part of the same cluster, then we replace cluster id
+        // with the lower id everywhere.
+        const c = if (c1 < c2) c1 else c2;
+        for (0..points.len) |i| {
+            if (ids.items[i] == c1 or ids.items[i] == c2) ids.items[i] = c;
+        }
+
+        wiresSpent += 1;
+        if (wiresSpent >= nWires) break;
+    }
+
+    for (ids.items) |c| {
+        print("{} ", .{c});
+    }
+    print("\n", .{});
 
     return 0 + nWires;
 }
