@@ -15,9 +15,10 @@ let xs = rename(p => p[0]);
 let ys = rename(p => p[1]);
 let xs_inv = invert(xs);
 let ys_inv = invert(ys);
-
 let corners_pack = [for p in corners: [xs_inv[p[0]], ys_inv[p[1]]]];
 
+// For part 1, compute all possible rectangles by descending size. We keep the
+// corners, because we'll use the same rectangles in part 2.
 let areas = [
   for i, c1 in corners.enumerate():
   for j in std.range(i + 1, corners.len()):
@@ -27,6 +28,10 @@ let areas = [
   [w * h, c1, c2]
 ];
 let areas_desc = areas.sort().reverse();
+
+// The idea for part 2: we flood-fill the map, starting from the outside, using
+// the outline of the shape as a barrier. Then later we check if any of the
+// rectangles overlap with any of the cells that are part of the exterior.
 
 // Horizontal or vertical connections between two endpoints.
 // Excludes the endpoints themselves.
@@ -38,6 +43,7 @@ let path = (c1, c2) =>
     let bounds = minmax(c1[0], c2[0]);
     std.range(bounds[0] + 1, bounds[1]).map(x => [x, c1[1]]);
 
+// The outline of the shape defined by the corners.
 let outline = {
   for i, c2 in corners_pack.enumerate():
   let c1 = corners_pack[i - 1];
@@ -45,7 +51,6 @@ let outline = {
   ..corners_pack,
 };
 
-// Now we compute a flood-fill of the outer region.
 let w = xs.len();
 let h = ys.len();
 let offsets = [
@@ -55,7 +60,7 @@ let offsets = [
   [dx, dy]
 ];
 
-// Grow the frontier by one step.
+// To flood-fill the exterior, we keep a frontier, and grow it every iteration.
 let iter = (closed, frontier) => {
   closed = { ..closed, ..frontier },
   frontier = {
@@ -100,15 +105,15 @@ assert fixed_point_state.frontier.len() == 0:
   };
 
 // All grid points outside of our intended shape.
-let outer = fixed_point_state.closed;
+let exterior = fixed_point_state.closed;
 
 // Given bounds [xmin, xmax], [ymin, ymax], is the rect fully inside the shape?
 // The way this is written is not the clearest, but by using `.all` on rows and
-// then on columns, we get early-out behavior, which we need to stay within the
+// then on columns, we get early-out behavior, which helps to stay within the
 // evaluation budget.
 let is_inside = (xs, ys) => std
   .range(ys[0], ys[1] + 1)
-  .all(y => std.range(xs[0], xs[1] + 1).all(x => not outer.contains([x, y])));
+  .all(y => std.range(xs[0], xs[1] + 1).all(x => not exterior.contains([x, y])));
 
 let areas_part2 = [
   // Here I'm going to cheat a bit. If we scan the full range, then we hit the
