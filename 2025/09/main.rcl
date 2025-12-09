@@ -42,28 +42,57 @@ let offsets = [
   [dx, dy]
 ];
 
-let iter = (frontier, closed) => {
-  closed = { ..closed, ..frontier },
-  frontier = {
-    for p in frontier:
-    for d in offsets:
-    let qx = p[0] + d[0];
-    let qy = p[1] + d[1];
-    if (qx >= 0) and (qy >= 0):
-    if (qx <= area_w) and (qy <= area_h):
-    let q = [qx, qy];
-    if not frontier.contains(q):
-    if not closed.contains(q):
-    if not outline.contains(q):
-    q
-  },
+let iter = (state, _i) =>
+  let closed = { ..state.closed, ..state.frontier };
+  {
+    closed = closed,
+    frontier = {
+      for p in state.frontier:
+      for d in offsets:
+
+      let qx = p[0] + d[0];
+      if qx >= 0:
+      if qx <= area_w:
+
+      let qy = p[1] + d[1];
+      if qy >= 0:
+      if qy <= area_h:
+
+      let q = [qx, qy];
+      if not closed.contains(q):
+      if not outline.contains(q):
+      q
+    },
+  };
+
+// We could seed the frontier with just (0, 0), but then it grows more slowly at
+// every step; if we seed it with all corners it converges faster. If we seed it
+// with the full outline then it grows _even faster_. But iterating lists counts
+// towards the budget too so this is no use ...
+let seed_frontier = {
+  [0, 0],
+  ..path([0, 0], [0, area_h]),
+  [0, area_h],
+  ..path([0, area_h], [area_w, area_h]),
+  [area_w, area_h],
+  ..path([area_w, area_h], [area_w, 0]),
+  [area_w, 0],
+  ..path([area_w, 0], [0, 0]),
 };
+let fixed_point_state = std
+  .range(0, 10)
+  .fold(
+    { frontier = seed_frontier, closed = std.empty_set },
+    iter,
+  );
 
-let iter_fixed_point = (self, frontier, closed) =>
-  let next = iter(frontier, closed);
-  if closed == next.closed: closed else: self(self, next.frontier, next.closed);
+assert fixed_point_state.frontier.len() == 0:
+  f"""
+  At a fixed point the frontier should be empty,
+  but here it has {fixed_point_state.frontier.len()} items still!
+  """;
 
-let outer = iter_fixed_point(iter_fixed_point, {[0, 0]}, std.empty_set);
+let outer = fixed_point_state.closed;
 
 let is_inside = (c1, c2) =>
   let xs = minmax(c1[0], c2[0]);
