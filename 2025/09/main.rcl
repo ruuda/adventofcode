@@ -1,11 +1,12 @@
 let corners = [
-  for line in std.read_file_utf8("input.txt").split_lines():
+  for line in std.read_file_utf8("example.txt").split_lines():
   line.split(",").map(x => x.parse_int())
 ];
 
 let abs = x => if x < 0: -x else: x;
+let minmax = (x, y) => if x < y: [x, y] else: [y, x];
 
-let areas = [
+let areas_part1 = [
   for i, c1 in corners.enumerate():
   for j in std.range(i + 1, corners.len()):
   let c2 = corners[j];
@@ -14,6 +15,56 @@ let areas = [
   w * h
 ];
 
+// Horizontal or vertical connections between two endpoints.
+// Excludes the endpoints themselves.
+let path = (c1, c2) =>
+  if c2[0] == c1[0]:
+    let bounds = minmax(c1[1], c2[1]);
+    std.range(bounds[0] + 1, bounds[1]).map(y => [c1[0], y])
+  else:
+    let bounds = minmax(c1[0], c2[0]);
+    std.range(bounds[0] + 1, bounds[1]).map(x => [x, c1[1]]);
+
+let outline = {
+  for i, c2 in corners.enumerate():
+  let c1 = corners[i - 1];
+  ..path(c1, c2),
+  ..corners,
+};
+
+// Now we compute a flood-fill of the outer region.
+let area_w = corners.map(p => p[0]).sort()[-1] + 1;
+let area_h = corners.map(p => p[1]).sort()[-1] + 1;
+let offsets = [
+  for dx in [-1, 0, 1]:
+  for dy in [-1, 0, 1]:
+  if dx != dy:
+  [dx, dy]
+];
+
+let iter = (frontier, closed) => {
+  closed = { ..closed, ..frontier },
+  frontier = {
+    for p in frontier:
+    for d in offsets:
+    let qx = p[0] + d[0];
+    let qy = p[1] + d[1];
+    if (qx >= 0) and (qy >= 0):
+    if (qx <= area_w) and (qy <= area_h):
+    let q = [qx, qy];
+    if not frontier.contains(q):
+    if not closed.contains(q):
+    q
+  },
+};
+
+let iter_fixed_point = (self, frontier, closed) =>
+  let next = iter(frontier, closed);
+  if closed == next.closed: closed else: self(self, next.frontier, next.closed);
+
+let outer = iter_fixed_point(iter_fixed_point, {[0, 0]}, std.empty_set);
+
 {
-  part1 = areas.sort().reverse()[0],
+  part1 = areas_part1.sort()[-1],
+  part2 = outer,
 }
