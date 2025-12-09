@@ -15,6 +15,18 @@ let areas_part1 = [
   w * h
 ];
 
+// Rename the coordinates to the minimal distinct set. In a sense we turn every
+// rectangle in the map into a single cell. This helps to reduce the cardinality
+// of the cells, and makes a flood fill feasible.
+let rename = f => [for x in {for p in corners: f(p)}: x].enumerate();
+let invert = m => { for k, v in m: v: k };
+let xs = rename(p => p[0]);
+let ys = rename(p => p[1]);
+let xs_inv = invert(xs);
+let ys_inv = invert(ys);
+
+let corners_pack = [for p in corners: [xs_inv[p[0]], ys_inv[p[1]]]];
+
 // Horizontal or vertical connections between two endpoints.
 // Excludes the endpoints themselves.
 let path = (c1, c2) =>
@@ -26,15 +38,15 @@ let path = (c1, c2) =>
     std.range(bounds[0] + 1, bounds[1]).map(x => [x, c1[1]]);
 
 let outline = {
-  for i, c2 in corners.enumerate():
-  let c1 = corners[i - 1];
+  for i, c2 in corners_pack.enumerate():
+  let c1 = corners_pack[i - 1];
   ..path(c1, c2),
-  ..corners,
+  ..corners_pack,
 };
 
 // Now we compute a flood-fill of the outer region.
-let area_w = corners.map(p => p[0]).sort()[-1] + 1;
-let area_h = corners.map(p => p[1]).sort()[-1] + 1;
+let w = xs.len();
+let h = ys.len();
 let offsets = [
   for dx in [-1, 0, 1]:
   for dy in [-1, 0, 1]:
@@ -42,23 +54,23 @@ let offsets = [
   [dx, dy]
 ];
 
-let iter = (state, _i) =>
-  let closed = { ..state.closed, ..state.frontier };
-  {
-    closed = closed,
+// Grow the frontier by one step.
+let iter = (closed, frontier)  => {
+    closed = { ..closed, ..frontier },
     frontier = {
-      for p in state.frontier:
+      for p in frontier:
       for d in offsets:
 
       let qx = p[0] + d[0];
-      if qx >= 0:
-      if qx <= area_w:
+      if qx >= (-1):
+      if qx <= w:
 
       let qy = p[1] + d[1];
-      if qy >= 0:
-      if qy <= area_h:
+      if qy >= (-1):
+      if qy <= h:
 
       let q = [qx, qy];
+      if not frontier.contains(q):
       if not closed.contains(q):
       if not outline.contains(q):
       q
@@ -67,31 +79,25 @@ let iter = (state, _i) =>
 
 // We could seed the frontier with just (0, 0), but then it grows more slowly at
 // every step; if we seed it with all corners it converges faster. If we seed it
-// with the full outline then it grows _even faster_. But iterating lists counts
-// towards the budget too so this is no use ...
-let seed_frontier = {
-  [0, 0],
-  ..path([0, 0], [0, area_h]),
-  [0, area_h],
-  ..path([0, area_h], [area_w, area_h]),
-  [area_w, area_h],
-  ..path([area_w, area_h], [area_w, 0]),
-  [area_w, 0],
-  ..path([area_w, 0], [0, 0]),
-};
+// with the full outline then it would grow even faster, but in the end either
+// step counts towards the RCL evaluation budget so that doesn't really help.
+// The number of iterations that we need has been chosen to be just above what
+// we need in order to converge and not violate the assertion below.
+let n_iters = 350;
+let seed_frontier = { [0, 0], [0, h], [w, h], [w, 0] };
 let fixed_point_state = std
-  .range(0, 10)
+  .range(0, n_iters)
   .fold(
-    { frontier = seed_frontier, closed = std.empty_set },
-    iter,
+    { closed = std.empty_set, frontier = seed_frontier },
+    (state, _i) => iter(state.closed, state.frontier),
   );
 
-assert fixed_point_state.frontier.len() == 0:
-  f"""
-  At a fixed point the frontier should be empty,
-  but here it has {fixed_point_state.frontier.len()} items still!
-  """;
+assert fixed_point_state.frontier.len() == 0: {
+  error = "At a fixed point the frontier should be empty.",
+  frontier = fixed_point_state.frontier,
+};
 
+// All grid points outside of our intended shape.
 let outer = fixed_point_state.closed;
 
 let is_inside = (c1, c2) =>
@@ -105,12 +111,16 @@ let is_inside = (c1, c2) =>
   not points.any(outer.contains);
 
 let areas_part2 = [
-  for i, c1 in corners.enumerate():
-  for j in std.range(i + 1, corners.len()):
-  let c2 = corners[j];
+  for i, c1 in corners_pack.enumerate():
+  for j in std.range(i + 1, corners_pack.len()):
+  let c2 = corners_pack[j];
   if is_inside(c1, c2):
-  let w = abs(c2[0] - c1[0]) + 1;
-  let h = abs(c2[1] - c1[1]) + 1;
+  let x1 = xs[c1[0]];
+  let x2 = xs[c2[0]];
+  let y1 = ys[c1[1]];
+  let y2 = ys[c2[1]];
+  let w = abs(x2 - x1) + 1;
+  let h = abs(y2 - y1) + 1;
   w * h
 ];
 
