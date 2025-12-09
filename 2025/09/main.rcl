@@ -1,19 +1,10 @@
 let corners = [
-  for line in std.read_file_utf8("input.txt").split_lines():
+  for line in std.read_file_utf8("example.txt").split_lines():
   line.split(",").map(x => x.parse_int())
 ];
 
 let abs = x => if x < 0: -x else: x;
 let minmax = (x, y) => if x < y: [x, y] else: [y, x];
-
-let areas_part1 = [
-  for i, c1 in corners.enumerate():
-  for j in std.range(i + 1, corners.len()):
-  let c2 = corners[j];
-  let w = abs(c2[0] - c1[0]) + 1;
-  let h = abs(c2[1] - c1[1]) + 1;
-  w * h
-];
 
 // Rename the coordinates to the minimal distinct set. In a sense we turn every
 // rectangle in the map into a single cell. This helps to reduce the cardinality
@@ -26,6 +17,16 @@ let xs_inv = invert(xs);
 let ys_inv = invert(ys);
 
 let corners_pack = [for p in corners: [xs_inv[p[0]], ys_inv[p[1]]]];
+
+let areas = [
+  for i, c1 in corners.enumerate():
+  for j in std.range(i + 1, corners.len()):
+  let c2 = corners[j];
+  let w = abs(c2[0] - c1[0]) + 1;
+  let h = abs(c2[1] - c1[1]) + 1;
+  [w * h, c1, c2]
+];
+let areas_desc = areas.sort().reverse();
 
 // Horizontal or vertical connections between two endpoints.
 // Excludes the endpoints themselves.
@@ -84,7 +85,7 @@ let iter = (closed, frontier)  => {
 // The number of iterations that we need has been chosen to be just above what
 // we need in order to converge and not violate the assertion below.
 let n_iters = 350;
-let seed_frontier = { [0, 0], [0, h], [w, h], [w, 0] };
+let seed_frontier = { [-1, -1], [-1, h], [w, h], [w, -1] };
 let fixed_point_state = std
   .range(0, n_iters)
   .fold(
@@ -100,9 +101,8 @@ assert fixed_point_state.frontier.len() == 0: {
 // All grid points outside of our intended shape.
 let outer = fixed_point_state.closed;
 
-let is_inside = (c1, c2) =>
-  let xs = minmax(c1[0], c2[0]);
-  let ys = minmax(c1[1], c2[1]);
+// Given bounds [xmin, xmax], [ymin, ymax], is the rect fully inside the shape?
+let is_inside = (xs, ys) =>
   let points = [
     for x in std.range(xs[0], xs[1] + 1):
     for y in std.range(ys[0], ys[1] + 1):
@@ -111,20 +111,16 @@ let is_inside = (c1, c2) =>
   not points.any(outer.contains);
 
 let areas_part2 = [
-  for i, c1 in corners_pack.enumerate():
-  for j in std.range(i + 1, corners_pack.len()):
-  let c2 = corners_pack[j];
-  if is_inside(c1, c2):
-  let x1 = xs[c1[0]];
-  let x2 = xs[c2[0]];
-  let y1 = ys[c1[1]];
-  let y2 = ys[c2[1]];
-  let w = abs(x2 - x1) + 1;
-  let h = abs(y2 - y1) + 1;
-  w * h
+  for item in areas_desc:
+  let c1 = item[1];
+  let c2 = item[2];
+  let xs = minmax(xs_inv[c1[0]], xs_inv[c2[0]]);
+  let ys = minmax(ys_inv[c1[1]], ys_inv[c2[1]]);
+  if is_inside(xs, ys):
+  item[0]
 ];
 
 {
-  part1 = areas_part1.sort()[-1],
-  part2 = areas_part2.sort()[-1],
+  part1 = areas_desc[0][0],
+  part2 = areas_part2[0],
 }
