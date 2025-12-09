@@ -1,5 +1,5 @@
 let corners = [
-  for line in std.read_file_utf8("example.txt").split_lines():
+  for line in std.read_file_utf8("input.txt").split_lines():
   line.split(",").map(x => x.parse_int())
 ];
 
@@ -56,27 +56,27 @@ let offsets = [
 ];
 
 // Grow the frontier by one step.
-let iter = (closed, frontier)  => {
-    closed = { ..closed, ..frontier },
-    frontier = {
-      for p in frontier:
-      for d in offsets:
+let iter = (closed, frontier) => {
+  closed = { ..closed, ..frontier },
+  frontier = {
+    for p in frontier:
+    for d in offsets:
 
-      let qx = p[0] + d[0];
-      if qx >= (-1):
-      if qx <= w:
+    let qx = p[0] + d[0];
+    if qx >= (-1):
+    if qx <= w:
 
-      let qy = p[1] + d[1];
-      if qy >= (-1):
-      if qy <= h:
+    let qy = p[1] + d[1];
+    if qy >= (-1):
+    if qy <= h:
 
-      let q = [qx, qy];
-      if not frontier.contains(q):
-      if not closed.contains(q):
-      if not outline.contains(q):
-      q
-    },
-  };
+    let q = [qx, qy];
+    if not frontier.contains(q):
+    if not closed.contains(q):
+    if not outline.contains(q):
+    q
+  },
+};
 
 // We could seed the frontier with just (0, 0), but then it grows more slowly at
 // every step; if we seed it with all corners it converges faster. If we seed it
@@ -85,7 +85,7 @@ let iter = (closed, frontier)  => {
 // The number of iterations that we need has been chosen to be just above what
 // we need in order to converge and not violate the assertion below.
 let n_iters = 350;
-let seed_frontier = { [-1, -1], [-1, h], [w, h], [w, -1] };
+let seed_frontier = {[-1, -1], [-1, h], [w, h], [w, -1]};
 let fixed_point_state = std
   .range(0, n_iters)
   .fold(
@@ -93,25 +93,29 @@ let fixed_point_state = std
     (state, _i) => iter(state.closed, state.frontier),
   );
 
-assert fixed_point_state.frontier.len() == 0: {
-  error = "At a fixed point the frontier should be empty.",
-  frontier = fixed_point_state.frontier,
-};
+assert fixed_point_state.frontier.len() == 0:
+  {
+    error = "At a fixed point the frontier should be empty.",
+    frontier = fixed_point_state.frontier,
+  };
 
 // All grid points outside of our intended shape.
 let outer = fixed_point_state.closed;
 
 // Given bounds [xmin, xmax], [ymin, ymax], is the rect fully inside the shape?
-let is_inside = (xs, ys) =>
-  let points = [
-    for x in std.range(xs[0], xs[1] + 1):
-    for y in std.range(ys[0], ys[1] + 1):
-    [x, y]
-  ];
-  not points.any(outer.contains);
+// The way this is written is not the clearest, but by using `.all` on rows and
+// then on columns, we get early-out behavior, which we need to stay within the
+// evaluation budget.
+let is_inside = (xs, ys) => std
+  .range(ys[0], ys[1] + 1)
+  .all(y => std.range(xs[0], xs[1] + 1).all(x => not outer.contains([x, y])));
 
 let areas_part2 = [
-  for item in areas_desc:
+  // Here I'm going to cheat a bit. If we scan the full range, then we hit the
+  // evaluation budget. But we can scan *part* of the range, see if the solution
+  // is in that part, if not, check the next part, etc. until we find the answer.
+  for i in std.range(47_000, 50_100):
+  let item = areas_desc[i];
   let c1 = item[1];
   let c2 = item[2];
   let xs = minmax(xs_inv[c1[0]], xs_inv[c2[0]]);
