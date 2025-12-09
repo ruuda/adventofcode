@@ -1,0 +1,19 @@
+let corners = [
+  for line in std.read_file_utf8("input.txt").split_lines():
+  line.split(",").map(x => x.parse_int())
+];
+
+let abs = x => if x < 0: -x else: x;
+
+let areas = [
+  for i, c1 in corners.enumerate():
+  for j in std.range(i + 1, corners.len()):
+  let c2 = corners[j];
+  let w = abs(c2[0] - c1[0]) + 1;
+  let h = abs(c2[1] - c1[1]) + 1;
+  w * h
+];
+
+{
+  part1 = areas.sort().reverse()[0],
+}
