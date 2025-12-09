@@ -51,28 +51,19 @@ let outline = {
   ..corners_pack,
 };
 
+// All grid points outside of our intended shape.
 let w = xs.len();
 let h = ys.len();
-let offsets = [
-  for dx in [-1, 0, 1]:
-  for dy in [-1, 0, 1]:
-  if dx != dy:
-  [dx, dy]
-];
-
-// All grid points outside of our intended shape.
 let exterior = {[w, h]}
   .transitive_closure(
     p => {
-      for d in offsets:
+      for dx in [-1, 0, 1]:
+      let qx = p[0] + dx;
+      if (qx >= (-1)) and (qx <= w):
 
-      let qx = p[0] + d[0];
-      if qx >= (-1):
-      if qx <= w:
-
-      let qy = p[1] + d[1];
-      if qy >= (-1):
-      if qy <= h:
+      for dy in [-1, 0, 1]:
+      let qy = p[1] + dy;
+      if (qy >= (-1)) and (qy <= h):
 
       let q = [qx, qy];
       if not outline.contains(q):
