@@ -1,5 +1,5 @@
 let corners = [
-  for line in std.read_file_utf8("example.txt").split_lines():
+  for line in std.read_file_utf8("input.txt").split_lines():
   line.split(",").map(x => x.parse_int())
 ];
 
@@ -54,6 +54,7 @@ let iter = (frontier, closed) => {
     let q = [qx, qy];
     if not frontier.contains(q):
     if not closed.contains(q):
+    if not outline.contains(q):
     q
   },
 };
@@ -64,7 +65,27 @@ let iter_fixed_point = (self, frontier, closed) =>
 
 let outer = iter_fixed_point(iter_fixed_point, {[0, 0]}, std.empty_set);
 
+let is_inside = (c1, c2) =>
+  let xs = minmax(c1[0], c2[0]);
+  let ys = minmax(c1[1], c2[1]);
+  let points = [
+    for x in std.range(xs[0], xs[1] + 1):
+    for y in std.range(ys[0], ys[1] + 1):
+    [x, y]
+  ];
+  not points.any(outer.contains);
+
+let areas_part2 = [
+  for i, c1 in corners.enumerate():
+  for j in std.range(i + 1, corners.len()):
+  let c2 = corners[j];
+  if is_inside(c1, c2):
+  let w = abs(c2[0] - c1[0]) + 1;
+  let h = abs(c2[1] - c1[1]) + 1;
+  w * h
+];
+
 {
   part1 = areas_part1.sort()[-1],
-  part2 = outer,
+  part2 = areas_part2.sort()[-1],
 }
