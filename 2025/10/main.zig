@@ -10,6 +10,9 @@ const Machine = struct {
     target: u128,
     buttons: []u128,
     joltage: []u8,
+
+    // Sum of the per-light joltages.
+    totalJoltage: u16,
 };
 
 // Mental gymnastics needed to parse this input in Python: Call str.split a few times.
@@ -47,10 +50,14 @@ const Parser = struct {
         var joltage = try std.ArrayList(u8).initCapacity(alloc, target.n);
         self.parseJoltages(&joltage);
 
+        var totalJoltage: u16 = 0;
+        for (joltage.items) |j| totalJoltage += j;
+
         return Machine{
             .target = target.target,
             .buttons = buttons.items,
             .joltage = joltage.items,
+            .totalJoltage = totalJoltage,
         };
     }
 
@@ -134,7 +141,7 @@ fn readInput(alloc: Allocator, fname: []const u8) ![]Machine {
 
 // Solve part 1 per machine. We explore the full state space of combination of
 // button presses, the input is small enough that it's feasible.
-fn fewestPresses(m: Machine) u32 {
+fn fewestPresses1(m: Machine) u32 {
     // The possible on-off states are the integers 0 through n-1.
     const n: u16 = @as(u16, 1) << @truncate(m.buttons.len);
     var i: u16 = 0;
@@ -163,14 +170,44 @@ fn fewestPresses(m: Machine) u32 {
     return fewest;
 }
 
+fn fewestPresses2(m: Machine) u32 {
+    // Observation: Based on which lights a button toggles, it has a maximum
+    // number of presses.
+    var maxima: [16]u8 = undefined;
+    @memset(&maxima, 0xff);
+
+    for (0..m.buttons.len) |b| {
+        const button = m.buttons[b];
+        for (0..m.joltage.len) |k| {
+            const bit = @as(u128, 1) << @truncate(8 * k);
+            if (button & bit == 0) continue;
+            const j = m.joltage[k];
+            if (j < maxima[b]) maxima[b] = j;
+        }
+    }
+
+    for (maxima) |mm| print("{} ", .{mm});
+    print("\n", .{});
+
+    // We are going to try all possible options that sum to `n` presses, by
+    // increasing `n`, so when we find a solution, it is the minimal one. This
+    // is very wasteful, we could probably find a better lower bound, but if the
+    // stupid thing works, then let's not do the smart thing.
+    //for (1..m.totalJoltage + 1) |n| {}
+    return 0;
+}
+
 pub fn main() !void {
     const alloc = std.heap.page_allocator;
     const machines = try readInput(alloc, "input.txt");
 
     var part1: u32 = 0;
+    var part2: u32 = 0;
     for (machines) |m| {
         print("{x} {}\n", .{ m.target, m.buttons.len });
-        part1 += fewestPresses(m);
+        part1 += fewestPresses1(m);
+        part2 += fewestPresses2(m);
     }
     print("Part 1: {}\n", .{part1});
+    print("Part 2: {}\n", .{part2});
 }
