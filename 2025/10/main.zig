@@ -193,8 +193,8 @@ fn fewestPresses2(m: Machine) u32 {
     for (0..m.buttons.len) |b| {
         const button = m.buttons[b];
 
-        // The light with the lowest joltage that this button connects to, is
-        // the maximum number of times we can press it before overflow.
+        // The light with the lowest joltage that this button connects to,
+        // is the maximum number of times we can press it before overflow.
         for (0..13) |k| {
             if (button[k] == 0) continue;
             const j = m.joltage[k];
@@ -203,19 +203,6 @@ fn fewestPresses2(m: Machine) u32 {
     }
 
     print("{} | {} => {}\n", .{ maxima, m.joltage, m.totalJoltage });
-
-    // For a light we can also wonder, is there a unique button that connects to
-    // it? If so, we know the number of presses.
-    if (false) {
-        for (0..13) |k| {
-            var nbtn: u8 = 0;
-            for (m.buttons) |b| {
-                if (b[k] != 0) nbtn += 1;
-            }
-            print("{} ", .{nbtn});
-        }
-        print("\n", .{});
-    }
 
     // An upper bound on the number of presses is the total joltage, when every
     // button presses a single light.
@@ -230,6 +217,9 @@ fn fewestPresses2(m: Machine) u32 {
             count[b] += 1;
             state += m.buttons[b];
 
+            // TODO: I can do something to reduce this upper bound, and move the
+            // counter on much earlier. But my brain is cloudy. Tomorrow retry.
+
             if (count[b] <= maxima[b]) break :inc;
 
             state -= m.buttons[b] * @as(Count, @splat(count[b]));
@@ -238,6 +228,8 @@ fn fewestPresses2(m: Machine) u32 {
 
             if (b >= m.buttons.len) break :search;
         }
+
+        print("  {}\n", .{count});
 
         if (@reduce(.And, state == m.joltage)) {
             var pc: u16 = 0;
@@ -252,7 +244,7 @@ fn fewestPresses2(m: Machine) u32 {
 
 pub fn main() !void {
     const alloc = std.heap.page_allocator;
-    const machines = try readInput(alloc, "example.txt");
+    const machines = try readInput(alloc, "input.txt");
 
     var part1: u32 = 0;
     var part2: u32 = 0;
