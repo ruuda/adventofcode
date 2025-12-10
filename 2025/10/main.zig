@@ -117,13 +117,13 @@ fn fewestPresses(m: Machine) u32 {
             if (i & bit == 0) break;
         }
 
+        i += 1;
+
         if (state == m.target) {
             const pc = @popCount(i);
             print("  {:2} {b}\n", .{ pc, i });
             if (pc < fewest) fewest = pc;
         }
-
-        i += 1;
     }
 
     return fewest;
@@ -131,7 +131,7 @@ fn fewestPresses(m: Machine) u32 {
 
 pub fn main() !void {
     const alloc = std.heap.page_allocator;
-    const machines = try readInput(alloc, "example.txt");
+    const machines = try readInput(alloc, "input.txt");
 
     var part1: u32 = 0;
     for (machines) |m| {
