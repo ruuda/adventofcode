@@ -98,10 +98,45 @@ fn readInput(alloc: Allocator, fname: []const u8) ![]Machine {
     return machines.items;
 }
 
+// Solve part 1 per machine. We explore the full state space of combination of
+// button presses, the input is small enough that it's feasible.
+fn fewestPresses(m: Machine) u32 {
+    // The possible on-off states are the integers 0 through n-1.
+    const n: u16 = @as(u16, 1) << @truncate(m.buttons.len);
+    var i: u16 = 0;
+
+    // Track the best score so far (fewest buttons enabled).
+    var fewest: u32 = @truncate(m.buttons.len);
+
+    var state: u16 = 0;
+
+    while (i < n - 1) {
+        for (0..16) |k| {
+            state = state ^ m.buttons[k];
+            const bit: u16 = @as(u16, 1) << @truncate(k);
+            if (i & bit == 0) break;
+        }
+
+        if (state == m.target) {
+            const pc = @popCount(i);
+            print("  {:2} {b}\n", .{ pc, i });
+            if (pc < fewest) fewest = pc;
+        }
+
+        i += 1;
+    }
+
+    return fewest;
+}
+
 pub fn main() !void {
     const alloc = std.heap.page_allocator;
     const machines = try readInput(alloc, "example.txt");
+
+    var part1: u32 = 0;
     for (machines) |m| {
-        print("{x}\n", .{m.target});
+        print("{b} {}\n", .{ m.target, m.buttons.len });
+        part1 += fewestPresses(m);
     }
+    print("Part 1: {}\n", .{part1});
 }
