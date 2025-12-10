@@ -3,15 +3,18 @@ const print = std.debug.print;
 const assert = std.debug.assert;
 const Allocator = std.mem.Allocator;
 
-// Mental gymnastics needed to parse this input in Python: Call str.split a few times.
-// Mental gymanstics needed to parse this in Zig: Hold my beer.
-// Here we go.
 const Machine = struct {
-    target: u16,
-    buttons: []u16,
+    // For part 1 initially I used a u16 with a bitmask per indicator light, but
+    // for part 2 we want to sum too, so now we use u128 with one byte per light.
+    // The input has at most 13 lights per machine, so this fits. SIMD for free!
+    target: u128,
+    buttons: []u128,
     joltage: []u8,
 };
 
+// Mental gymnastics needed to parse this input in Python: Call str.split a few times.
+// Mental gymanstics needed to parse this in Zig: Hold my beer.
+// Here we go.
 const Parser = struct {
     input: []const u8,
     cursor: usize,
@@ -28,7 +31,7 @@ const Parser = struct {
     }
 
     fn parseMachine(self: *Parser, alloc: Allocator) !Machine {
-        var buttons = try std.ArrayList(u16).initCapacity(alloc, 0);
+        var buttons = try std.ArrayList(u128).initCapacity(alloc, 0);
         try self.expect('[');
         const target = try self.parseTarget();
         try self.expect(' ');
@@ -51,9 +54,9 @@ const Parser = struct {
         };
     }
 
-    fn parseTarget(self: *Parser) !struct { target: u16, n: usize } {
-        var target: u16 = 0;
-        var bit: u16 = 1;
+    fn parseTarget(self: *Parser) !struct { target: u128, n: usize } {
+        var target: u128 = 0;
+        var bit: u128 = 1;
         var n: usize = 0;
         while (true) {
             switch (self.take()) {
@@ -62,17 +65,18 @@ const Parser = struct {
                 ']' => break,
                 else => return error.InvalidInput,
             }
-            bit = bit << 1;
+            bit = bit << 8;
             n += 1;
         }
         return .{ .target = target, .n = n };
     }
 
-    fn parseButton(self: *Parser) !u16 {
-        var target: u16 = 0;
+    fn parseButton(self: *Parser) !u128 {
+        var target: u128 = 0;
 
         while (true) {
-            const bit = @as(u16, 1) << @truncate(self.take() - '0');
+            const n: u8 = self.take() - '0';
+            const bit = @as(u128, 1) << @truncate(8 * n);
             target = target | bit;
             switch (self.take()) {
                 ',' => continue,
@@ -138,12 +142,12 @@ fn fewestPresses(m: Machine) u32 {
     // Track the best score so far (fewest buttons enabled).
     var fewest: u32 = @truncate(m.buttons.len);
 
-    var state: u16 = 0;
+    var state: u128 = 0;
 
     while (i < n - 1) {
         for (0..16) |k| {
             state = state ^ m.buttons[k];
-            const bit: u16 = @as(u16, 1) << @truncate(k);
+            const bit: u128 = @as(u16, 1) << @truncate(k);
             if (i & bit == 0) break;
         }
 
@@ -161,11 +165,11 @@ fn fewestPresses(m: Machine) u32 {
 
 pub fn main() !void {
     const alloc = std.heap.page_allocator;
-    const machines = try readInput(alloc, "example.txt");
+    const machines = try readInput(alloc, "input.txt");
 
     var part1: u32 = 0;
     for (machines) |m| {
-        print("{b} {}\n", .{ m.target, m.buttons.len });
+        print("{x} {}\n", .{ m.target, m.buttons.len });
         part1 += fewestPresses(m);
     }
     print("Part 1: {}\n", .{part1});
