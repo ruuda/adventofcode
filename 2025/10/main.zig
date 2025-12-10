@@ -3,13 +3,21 @@ const print = std.debug.print;
 const assert = std.debug.assert;
 const Allocator = std.mem.Allocator;
 
+// For part 1 initially I used a u16 with a bitmask per indicator light, but
+// for part 2 we want to sum too, so now we use u128 with one byte per light.
+// The input has at most 13 lights per machine, so this fits. SIMD for free!
 const Machine = struct {
-    // For part 1 initially I used a u16 with a bitmask per indicator light, but
-    // for part 2 we want to sum too, so now we use u128 with one byte per light.
-    // The input has at most 13 lights per machine, so this fits. SIMD for free!
+    // For part 1, target on/off bit per light.
     target: u128,
+
+    // The buttons, each as bitmask of the lights they touch, on every 8th bit.
     buttons: []u128,
-    joltage: []u8,
+
+    // Joltages packed in one u128.
+    joltage: u128,
+
+    // Split out representation of the joltages per light.
+    joltages: []u8,
 
     // Sum of the per-light joltages.
     totalJoltage: u16,
@@ -47,16 +55,21 @@ const Parser = struct {
             }
         }
 
-        var joltage = try std.ArrayList(u8).initCapacity(alloc, target.n);
-        self.parseJoltages(&joltage);
+        var joltages = try std.ArrayList(u8).initCapacity(alloc, target.n);
+        self.parseJoltages(&joltages);
 
         var totalJoltage: u16 = 0;
-        for (joltage.items) |j| totalJoltage += j;
+        var joltage: u128 = 0;
+        for (joltages.items, 0..) |j, k| {
+            totalJoltage += j;
+            joltage += (@as(u128, j) << @truncate(k * 8));
+        }
 
         return Machine{
             .target = target.target,
             .buttons = buttons.items,
-            .joltage = joltage.items,
+            .joltage = joltage,
+            .joltages = joltages.items,
             .totalJoltage = totalJoltage,
         };
     }
@@ -178,22 +191,40 @@ fn fewestPresses2(m: Machine) u32 {
 
     for (0..m.buttons.len) |b| {
         const button = m.buttons[b];
-        for (0..m.joltage.len) |k| {
+
+        // The light with the lowest joltage that this button connects to, is
+        // the maximum number of times we can press it before overflow.
+        for (m.joltages, 0..) |j, k| {
             const bit = @as(u128, 1) << @truncate(8 * k);
             if (button & bit == 0) continue;
-            const j = m.joltage[k];
             if (j < maxima[b]) maxima[b] = j;
         }
     }
 
-    for (maxima) |mm| print("{} ", .{mm});
+    for (0..m.joltages.len) |i| print("{} ", .{maxima[i]});
+    print("-> {} {x}\n", .{ m.totalJoltage, m.joltage });
+
+    // For a light we can also wonder, is there a unique button that connects to
+    // it? If so, we know the number of presses.
+    for (0..m.joltages.len) |k| {
+        const bit = @as(u128, 1) << @truncate(8 * k);
+        var nbtn: u8 = 0;
+        for (m.buttons) |b| {
+            if (b & bit != 0) nbtn += 1;
+        }
+        print("{} ", .{nbtn});
+    }
     print("\n", .{});
+
+    var counts: [16]u8 = undefined;
+    @memset(&counts, 0);
+    //var state: u128 = 0;
+    //while (true) {}
 
     // We are going to try all possible options that sum to `n` presses, by
     // increasing `n`, so when we find a solution, it is the minimal one. This
     // is very wasteful, we could probably find a better lower bound, but if the
     // stupid thing works, then let's not do the smart thing.
-    //for (1..m.totalJoltage + 1) |n| {}
     return 0;
 }
 
