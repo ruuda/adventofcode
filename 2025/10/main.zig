@@ -9,6 +9,7 @@ const Allocator = std.mem.Allocator;
 const Machine = struct {
     target: u16,
     buttons: []u16,
+    joltage: []u8,
 };
 
 const Parser = struct {
@@ -40,12 +41,20 @@ const Parser = struct {
             }
         }
 
-        return Machine{ .target = target, .buttons = buttons.items };
+        var joltage = try std.ArrayList(u8).initCapacity(alloc, target.n);
+        self.parseJoltages(&joltage);
+
+        return Machine{
+            .target = target.target,
+            .buttons = buttons.items,
+            .joltage = joltage.items,
+        };
     }
 
-    fn parseTarget(self: *Parser) !u16 {
+    fn parseTarget(self: *Parser) !struct { target: u16, n: usize } {
         var target: u16 = 0;
         var bit: u16 = 1;
+        var n: usize = 0;
         while (true) {
             switch (self.take()) {
                 '.' => {},
@@ -54,8 +63,9 @@ const Parser = struct {
                 else => return error.InvalidInput,
             }
             bit = bit << 1;
+            n += 1;
         }
-        return target;
+        return .{ .target = target, .n = n };
     }
 
     fn parseButton(self: *Parser) !u16 {
@@ -75,6 +85,26 @@ const Parser = struct {
         try self.expect(' ');
 
         return target;
+    }
+
+    fn parseJoltages(self: *Parser, out: *std.ArrayList(u8)) void {
+        var n: u8 = 0;
+        while (true) {
+            const ch = self.take();
+            switch (ch) {
+                ',' => {
+                    out.appendAssumeCapacity(n);
+                    n = 0;
+                },
+                '}' => {
+                    out.appendAssumeCapacity(n);
+                    break;
+                },
+                else => {
+                    n = n * 10 + (ch - '0');
+                },
+            }
+        }
     }
 };
 
@@ -131,7 +161,7 @@ fn fewestPresses(m: Machine) u32 {
 
 pub fn main() !void {
     const alloc = std.heap.page_allocator;
-    const machines = try readInput(alloc, "input.txt");
+    const machines = try readInput(alloc, "example.txt");
 
     var part1: u32 = 0;
     for (machines) |m| {
