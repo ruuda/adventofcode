@@ -164,7 +164,6 @@ fn fewestPresses1(m: Machine) u32 {
 
     // Track the best score so far (fewest buttons enabled).
     var fewest: u32 = @truncate(m.buttons.len);
-
     var state: Count = @splat(0);
 
     while (i < n - 1) {
@@ -203,35 +202,57 @@ fn fewestPresses2(m: Machine) u32 {
         }
     }
 
-    for (0..13) |i| print("{} ", .{maxima[i]});
-    print("-> {} {}\n", .{ m.totalJoltage, m.joltage });
+    print("{} | {} => {}\n", .{ maxima, m.joltage, m.totalJoltage });
 
     // For a light we can also wonder, is there a unique button that connects to
     // it? If so, we know the number of presses.
-    for (0..13) |k| {
-        var nbtn: u8 = 0;
-        for (m.buttons) |b| {
-            if (b[k] != 0) nbtn += 1;
+    if (false) {
+        for (0..13) |k| {
+            var nbtn: u8 = 0;
+            for (m.buttons) |b| {
+                if (b[k] != 0) nbtn += 1;
+            }
+            print("{} ", .{nbtn});
         }
-        print("{} ", .{nbtn});
+        print("\n", .{});
     }
-    print("\n", .{});
 
-    var counts: [16]u8 = undefined;
-    @memset(&counts, 0);
-    //var state: u128 = 0;
-    //while (true) {}
+    // An upper bound on the number of presses is the total joltage, when every
+    // button presses a single light.
+    var fewest: u16 = @truncate(m.totalJoltage);
+    var count: Count = @splat(0);
+    var state: Count = @splat(0);
 
-    // We are going to try all possible options that sum to `n` presses, by
-    // increasing `n`, so when we find a solution, it is the minimal one. This
-    // is very wasteful, we could probably find a better lower bound, but if the
-    // stupid thing works, then let's not do the smart thing.
-    return 0;
+    search: while (true) {
+        // "Increment" the counts.
+        var b: u16 = 0;
+        inc: while (true) {
+            count[b] += 1;
+            state += m.buttons[b];
+
+            if (count[b] <= maxima[b]) break :inc;
+
+            state -= m.buttons[b] * @as(Count, @splat(count[b]));
+            count[b] = 0;
+            b += 1;
+
+            if (b >= m.buttons.len) break :search;
+        }
+
+        if (@reduce(.And, state == m.joltage)) {
+            var pc: u16 = 0;
+            for (0..13) |i| pc += count[i];
+            print("  {:2} {}\n", .{ pc, count });
+            if (pc < fewest) fewest = pc;
+        }
+    }
+
+    return fewest;
 }
 
 pub fn main() !void {
     const alloc = std.heap.page_allocator;
-    const machines = try readInput(alloc, "input.txt");
+    const machines = try readInput(alloc, "example.txt");
 
     var part1: u32 = 0;
     var part2: u32 = 0;
