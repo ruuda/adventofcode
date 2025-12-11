@@ -6,13 +6,6 @@ const Allocator = std.mem.Allocator;
 // A count for each of the at most 13 lights. Fits in fewer than 128 bits!
 const Count = @Vector(13, u8);
 
-// Count with n-th index set to 1 and others set to 0.
-fn nth(n: usize) Count {
-    var result: Count = @splat(0);
-    result[n] = 1;
-    return result;
-}
-
 fn descPopCount(context: void, lhs: Count, rhs: Count) bool {
     _ = context;
     const nlhs = @reduce(.Add, @popCount(lhs));
@@ -38,8 +31,7 @@ const Machine = struct {
 };
 
 // Mental gymnastics needed to parse this input in Python: Call str.split a few times.
-// Mental gymanstics needed to parse this in Zig: Hold my beer.
-// Here we go.
+// Mental gymanstics needed to parse this in Zig: Hold my beer. Here we go!
 const Parser = struct {
     input: []const u8,
     cursor: usize,
@@ -253,7 +245,6 @@ fn fewestPressesRec(
 
     // Base case: all buttons have a count assigned, is the solution valid?
     if (b == m.buttons.len) {
-        //print("  ? {:2} {}\n", .{ totalCount, state });
         if (@reduce(.And, state == m.joltage)) {
             print("  {:2}\n", .{totalCount});
             std.debug.assert(totalCount < fewest.*);
@@ -263,26 +254,15 @@ fn fewestPressesRec(
     }
 
     // The mask tells which joltages can still change by pressing buttons,
-    // including this button b. Joltages that cannot change any more must
-    // already be correct, if not then this branch of the search space cannot
-    // contain a solution.
-    const mask = @as(Count, @splat(1)) - masks[b];
-    const finals = state * mask;
-    const target = m.joltage * mask;
-    if (!@reduce(.And, finals == target)) {
-        // print("Mask out: {}\n", .{target});
-        return;
-    }
-
-    // There may also be joltages where this button is the final one that can
-    // set them. In that case, we immediately know the count, and we can prune
-    // entire branches.
+    // including this button b. There may also be joltages where this button is
+    // the final one that can set them. In that case, we immediately know the
+    // count, and we can prune entire branches.
     const unique = masks[b] - masks[b + 1];
     count = @reduce(.Max, (m.joltage - state) * unique);
     if (count > 0) {
-        state +|= m.buttons[b] * @as(Count, @splat(count));
         totalCount += count;
         if (totalCount >= fewest.*) return;
+        state +|= m.buttons[b] * @as(Count, @splat(count));
         if (@reduce(.Or, state > m.joltage)) return;
         fewestPressesRec(m, maxima, masks, totalCount, state, b + 1, fewest);
         return;
