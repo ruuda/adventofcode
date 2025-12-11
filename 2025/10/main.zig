@@ -255,7 +255,7 @@ fn fewestPressesRec(
     if (b == m.buttons.len) {
         //print("  ? {:2} {}\n", .{ totalCount, state });
         if (@reduce(.And, state == m.joltage)) {
-            print("  {:2} {}\n", .{ totalCount, state });
+            print("  {:2}\n", .{totalCount});
             std.debug.assert(totalCount < fewest.*);
             fewest.* = totalCount;
         }
@@ -271,6 +271,20 @@ fn fewestPressesRec(
     const target = m.joltage * mask;
     if (!@reduce(.And, finals == target)) {
         // print("Mask out: {}\n", .{target});
+        return;
+    }
+
+    // There may also be joltages where this button is the final one that can
+    // set them. In that case, we immediately know the count, and we can prune
+    // entire branches.
+    const unique = masks[b] - masks[b + 1];
+    count = @reduce(.Max, (m.joltage - state) * unique);
+    if (count > 0) {
+        state +|= m.buttons[b] * @as(Count, @splat(count));
+        totalCount += count;
+        if (totalCount >= fewest.*) return;
+        if (@reduce(.Or, state > m.joltage)) return;
+        fewestPressesRec(m, maxima, masks, totalCount, state, b + 1, fewest);
         return;
     }
 
