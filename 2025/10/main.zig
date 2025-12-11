@@ -217,11 +217,11 @@ fn fewestPresses2(m: Machine) u32 {
 
     // An upper bound on the number of presses is the total joltage, when every
     // button presses a single light.
-    const fewest: u16 = @truncate(m.totalJoltage);
+    var fewest: u16 = @truncate(m.totalJoltage);
 
     const initCount: u16 = 0;
     const initState: Count = @splat(0);
-    fewestPressesRec(&m, maxima, initCount, initState, 0);
+    fewestPressesRec(&m, maxima, initCount, initState, 0, &fewest);
 
     return fewest;
 }
@@ -232,27 +232,33 @@ fn fewestPressesRec(
     partialCount: u16,
     partialState: Count,
     b: usize,
+    fewest: *u16,
 ) void {
-    var totalCount = partialCount;
+    var totalCount: u16 = partialCount;
     var state = partialState;
     var count: u8 = 0;
 
     // Base case: all buttons have a count assigned, is the solution valid?
     if (b == m.buttons.len) {
-        print("  ? {:2} {}\n", .{ totalCount, state });
+        //print("  ? {:2} {}\n", .{ totalCount, state });
         if (@reduce(.And, state == m.joltage)) {
             print("  {:2} {}\n", .{ totalCount, state });
-            //if (pc < fewest) fewest = pc;
+            std.debug.assert(totalCount < fewest.*);
+            fewest.* = totalCount;
         }
         return;
     }
 
     // Recursion case: walk through all possible count assignments for button b.
     while (count <= maxima[b]) {
-        fewestPressesRec(m, maxima, totalCount, state, b + 1);
+        fewestPressesRec(m, maxima, totalCount, state, b + 1, fewest);
         count += 1;
         state += m.buttons[b];
         totalCount += 1;
+
+        // If this branch is at this point already not going to yield a better
+        // solution, abandon and prune.
+        if (totalCount >= fewest.*) return;
 
         // If we overshoot, then no more solutions are possible for this count
         // assignment, and we can prune the entire branch of the search space.
