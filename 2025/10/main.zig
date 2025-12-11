@@ -13,9 +13,6 @@ fn descPopCount(context: void, lhs: Count, rhs: Count) bool {
     return nlhs > nrhs;
 }
 
-// For part 1 initially I used a u16 with a bitmask per indicator light, but
-// for part 2 we want to sum too, so now we use u128 with one byte per light.
-// The input has at most 13 lights per machine, so this fits. SIMD for free!
 const Machine = struct {
     // For part 1, target on/off bit per light.
     target: Count,
@@ -23,7 +20,7 @@ const Machine = struct {
     // The buttons, each as bitmask of the lights they touch.
     buttons: []Count,
 
-    // Joltages per light.
+    // For part 2, target joltages per light.
     joltage: Count,
 
     // Sum of the per-light joltages.
