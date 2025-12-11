@@ -197,10 +197,9 @@ fn fewestPresses2(m: Machine) u32 {
     // pressing the buttons that activate most lights first.
     std.sort.pdq(Count, m.buttons, {}, descPopCount);
 
-    // Observation: Based on which lights a button toggles, it has a maximum
-    // number of presses. TODO: Set to 0 for non-existing buttons.
+    // Based on which lights a button toggles, it has a maximum
+    // number of presses.
     var maxima: Count = @splat(0xff);
-
     for (0..m.buttons.len) |b| {
         const button = m.buttons[b];
 
@@ -215,13 +214,26 @@ fn fewestPresses2(m: Machine) u32 {
 
     print("{} | {} => {}\n", .{ maxima, m.joltage, m.totalJoltage });
 
+    // For buttons, in order, we also compute which lights can still be
+    // incremented, to be able to cut off early when a solution is no longer
+    // possible.
+    var masks: [16]Count = undefined;
+    @memset(&masks, @splat(0));
+    var k = m.buttons.len;
+    while (k > 0) {
+        const nextMask = masks[k];
+        k -= 1;
+        masks[k] = m.buttons[k] | nextMask;
+    }
+    for (0..m.buttons.len) |b| print("  {}\n", .{masks[b]});
+
     // An upper bound on the number of presses is the total joltage, when every
     // button presses a single light.
     var fewest: u16 = @truncate(m.totalJoltage);
 
     const initCount: u16 = 0;
     const initState: Count = @splat(0);
-    fewestPressesRec(&m, maxima, initCount, initState, 0, &fewest);
+    fewestPressesRec(&m, maxima, &masks, initCount, initState, 0, &fewest);
 
     return fewest;
 }
@@ -229,6 +241,7 @@ fn fewestPresses2(m: Machine) u32 {
 fn fewestPressesRec(
     m: *const Machine,
     maxima: Count,
+    masks: []Count,
     partialCount: u16,
     partialState: Count,
     b: usize,
@@ -249,9 +262,21 @@ fn fewestPressesRec(
         return;
     }
 
+    // The mask tells which joltages can still change by pressing buttons,
+    // including this button b. Joltages that cannot change any more must
+    // already be correct, if not then this branch of the search space cannot
+    // contain a solution.
+    const mask = @as(Count, @splat(1)) - masks[b];
+    const finals = state * mask;
+    const target = m.joltage * mask;
+    if (!@reduce(.And, finals == target)) {
+        // print("Mask out: {}\n", .{target});
+        return;
+    }
+
     // Recursion case: walk through all possible count assignments for button b.
     while (count <= maxima[b]) {
-        fewestPressesRec(m, maxima, totalCount, state, b + 1, fewest);
+        fewestPressesRec(m, maxima, masks, totalCount, state, b + 1, fewest);
         count += 1;
         state += m.buttons[b];
         totalCount += 1;
