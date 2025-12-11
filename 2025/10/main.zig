@@ -13,6 +13,13 @@ fn nth(n: usize) Count {
     return result;
 }
 
+fn descPopCount(context: void, lhs: Count, rhs: Count) bool {
+    _ = context;
+    const nlhs = @reduce(.Add, @popCount(lhs));
+    const nrhs = @reduce(.Add, @popCount(rhs));
+    return nlhs > nrhs;
+}
+
 // For part 1 initially I used a u16 with a bitmask per indicator light, but
 // for part 2 we want to sum too, so now we use u128 with one byte per light.
 // The input has at most 13 lights per machine, so this fits. SIMD for free!
@@ -186,8 +193,12 @@ fn fewestPresses1(m: Machine) u32 {
 }
 
 fn fewestPresses2(m: Machine) u32 {
+    // Sort buttons by descending number of lights they activate. We want to try
+    // pressing the buttons that activate most lights first.
+    std.sort.pdq(Count, m.buttons, {}, descPopCount);
+
     // Observation: Based on which lights a button toggles, it has a maximum
-    // number of presses.
+    // number of presses. TODO: Set to 0 for non-existing buttons.
     var maxima: Count = @splat(0xff);
 
     for (0..m.buttons.len) |b| {
@@ -206,40 +217,47 @@ fn fewestPresses2(m: Machine) u32 {
 
     // An upper bound on the number of presses is the total joltage, when every
     // button presses a single light.
-    var fewest: u16 = @truncate(m.totalJoltage);
-    var count: Count = @splat(0);
-    var state: Count = @splat(0);
+    const fewest: u16 = @truncate(m.totalJoltage);
 
-    search: while (true) {
-        // "Increment" the counts.
-        var b: u16 = 0;
-        inc: while (true) {
-            count[b] += 1;
-            state += m.buttons[b];
-
-            // TODO: I can do something to reduce this upper bound, and move the
-            // counter on much earlier. But my brain is cloudy. Tomorrow retry.
-
-            if (count[b] <= maxima[b]) break :inc;
-
-            state -= m.buttons[b] * @as(Count, @splat(count[b]));
-            count[b] = 0;
-            b += 1;
-
-            if (b >= m.buttons.len) break :search;
-        }
-
-        print("  {}\n", .{count});
-
-        if (@reduce(.And, state == m.joltage)) {
-            var pc: u16 = 0;
-            for (0..13) |i| pc += count[i];
-            print("  {:2} {}\n", .{ pc, count });
-            if (pc < fewest) fewest = pc;
-        }
-    }
+    const initCount: u16 = 0;
+    const initState: Count = @splat(0);
+    fewestPressesRec(&m, maxima, initCount, initState, 0);
 
     return fewest;
+}
+
+fn fewestPressesRec(
+    m: *const Machine,
+    maxima: Count,
+    partialCount: u16,
+    partialState: Count,
+    b: usize,
+) void {
+    var totalCount = partialCount;
+    var state = partialState;
+    var count: u8 = 0;
+
+    // Base case: all buttons have a count assigned, is the solution valid?
+    if (b == m.buttons.len) {
+        print("  ? {:2} {}\n", .{ totalCount, state });
+        if (@reduce(.And, state == m.joltage)) {
+            print("  {:2} {}\n", .{ totalCount, state });
+            //if (pc < fewest) fewest = pc;
+        }
+        return;
+    }
+
+    // Recursion case: walk through all possible count assignments for button b.
+    while (count <= maxima[b]) {
+        fewestPressesRec(m, maxima, totalCount, state, b + 1);
+        count += 1;
+        state += m.buttons[b];
+        totalCount += 1;
+
+        // If we overshoot, then no more solutions are possible for this count
+        // assignment, and we can prune the entire branch of the search space.
+        if (@reduce(.Or, state > m.joltage)) return;
+    }
 }
 
 pub fn main() !void {
