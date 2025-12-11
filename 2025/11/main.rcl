@@ -7,14 +7,6 @@ let graph = {
   "out": [],
 };
 
-let graph_test = {
-  you = ["2", "4"],
-  "2": ["out"],
-  "3": ["2", "out"],
-  "4": ["3"],
-  "out": [],
-};
-
 // Now we toposort the graph.
 let iter = (self, layers, g) =>
   let leaves = [
@@ -45,10 +37,11 @@ let edges = {
   { from = node, to = out }
 };
 let inverse_graph = {
-  for node, edges in edges.group_by(e => e.to): node: [..edges.map(e => e.from)]
+  for node, edges in edges.group_by(e => e.to):
+  node: [..edges.map(e => e.from) ]
 };
 
-let route_counts = toposort
+let route_counts_part1 = toposort
   .reverse()
   .fold(
     // We start at "you" and have 1 way of reaching it.
@@ -60,6 +53,33 @@ let route_counts = toposort
     ),
   );
 
+// We count the number of ways to reach nodes, but in four ways:
+// non: none, have not seen fft or dac yet
+// fft: have only seen fft yet
+// dac: have only seen dac yet
+// don: done, seen both dac and fft.
+let zero = { non = 0, dac = 0, fft = 0, don = 0 };
+let vec_add = (n, m) => { for k, v in n: k: v + m[k] };
+let vec_sum = xs => xs.fold(zero, vec_add);
+
+let route_counts_part2 = toposort
+  .reverse()
+  .fold(
+    {},
+    (counts, node) =>
+      let n = vec_sum(inverse_graph.get(node, []).map(from => counts[from]));
+      {
+        ...counts,
+        node: {
+          ...n,
+          if node == "svr": non = 1,
+          if node == "dac": ...{ dac = n.non, don = n.fft, non = 0 },
+          if node == "fft": ...{ fft = n.non, don = n.dac, non = 0 },
+        },
+      },
+  );
+
 {
-  part1 = route_counts["out"],
+  part1 = route_counts_part1["out"],
+  part2 = route_counts_part2["out"].don,
 }
