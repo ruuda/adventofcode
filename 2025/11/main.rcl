@@ -1,0 +1,65 @@
+let graph = {
+  for line in std.read_file_utf8("input.txt").split_lines():
+  let parts = line.split(": ");
+  parts[0]: parts[1].split(" "),
+
+  // The out node is not explicitly present, we add it ourselves.
+  "out": [],
+};
+
+let graph_test = {
+  you = ["2", "4"],
+  "2": ["out"],
+  "3": ["2", "out"],
+  "4": ["3"],
+  "out": [],
+};
+
+// Now we toposort the graph.
+let iter = (self, layers, g) =>
+  let leaves = [
+    for node, outs in g:
+    if outs.len() == 0:
+    node
+  ];
+  let g_new = {
+    for node, outs in g:
+    if outs.len() > 0:
+    node: [
+      for out in outs:
+      if not leaves.contains(out):
+      out
+    ]
+  };
+  if leaves.len() > 0:
+    self(self, [..layers, leaves ], g_new)
+  else:
+    [for layer in layers: ..layer ];
+
+let toposort = iter(iter, [], graph);
+
+// Build the inverse graph that contains per node, all nodes pointing into it.
+let edges = {
+  for node, outs in graph:
+  for out in outs:
+  { from = node, to = out }
+};
+let inverse_graph = {
+  for node, edges in edges.group_by(e => e.to): node: [..edges.map(e => e.from)]
+};
+
+let route_counts = toposort
+  .reverse()
+  .fold(
+    // We start at "you" and have 1 way of reaching it.
+    { "you": 1 },
+    (counts, node) => (
+      // The number of ways to reach this node.
+      let n = inverse_graph.get(node, []).map(from => counts[from]).sum();
+      { node: n, ...counts }
+    ),
+  );
+
+{
+  part1 = route_counts["out"],
+}
