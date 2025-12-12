@@ -19,7 +19,10 @@ fn readInput(alloc: Allocator, fname: []const u8) !Input {
     const file = try std.fs.cwd().openFile(fname, .{});
     defer file.close();
 
-    var buf: [512]u8 = undefined;
+    // With a smaller buffer size, sometimes `wStr` and `hStr` below contain a
+    // space. I don't understand how this happens, sidestep the problem by just
+    // fitting the entire file into the buffer.
+    var buf: [4096 * 10]u8 = undefined;
     var r = file.reader(&buf);
 
     inline for (0..6) |i| {
@@ -34,17 +37,18 @@ fn readInput(alloc: Allocator, fname: []const u8) !Input {
     }
 
     while (true) {
-        const wStr = r.interface.takeDelimiterExclusive('x') catch break;
-        r.interface.toss(1);
-        const hStr = r.interface.takeDelimiterExclusive(':') catch break;
-        r.interface.toss(2);
+        r.interface.fill(7) catch break;
+        const wStr = try r.interface.takeDelimiterExclusive('x');
+        try r.interface.discardAll(1);
+        const hStr = try r.interface.takeDelimiterExclusive(':');
+        try r.interface.discardAll(2);
 
         var counts: [6]u8 = undefined;
         inline for (0..6) |i| {
             const delimiter = if (i < 5) ' ' else '\n';
-            const nStr = r.interface.takeDelimiterExclusive(delimiter) catch break;
+            const nStr = try r.interface.takeDelimiterExclusive(delimiter);
             counts[i] = try std.fmt.parseInt(u8, nStr, 10);
-            r.interface.toss(1);
+            try r.interface.discardAll(1);
         }
 
         const region = Region{
@@ -53,7 +57,6 @@ fn readInput(alloc: Allocator, fname: []const u8) !Input {
             .counts = counts,
         };
         try regions.append(alloc, region);
-        _ = r.interface.discardDelimiterInclusive('\n') catch break;
     }
 
     return Input{ .shapes = shapes, .regions = regions.items };
@@ -61,7 +64,7 @@ fn readInput(alloc: Allocator, fname: []const u8) !Input {
 
 pub fn main() !void {
     const alloc = std.heap.page_allocator;
-    const input = try readInput(alloc, "example.txt");
+    const input = try readInput(alloc, "input.txt");
 
     // var part1: u32 = 0;
     for (input.regions) |r| {
