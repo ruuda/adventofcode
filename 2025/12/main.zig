@@ -91,6 +91,22 @@ fn canFit(alloc: Allocator, input: *const Input, region: Region) !bool {
         return false;
     }
 
+    // Compute if the region can fit the shapes trivially. Maybe we don't
+    // need to pack; maybe we have sufficient 3x3 cells available to just
+    // place everything?
+    const cellsX = region.w / 3;
+    const cellsY = region.h / 3;
+    const regionCells = cellsX * cellsY;
+    var requiredCells: u32 = 0;
+    for (region.counts) |c| requiredCells += c;
+    if (requiredCells <= regionCells) {
+        print(
+            "  Puzzle is trivial: need {} 3x3 cells, have {}.\n",
+            .{ requiredCells, regionCells },
+        );
+        return true;
+    }
+
     return false;
 }
 
