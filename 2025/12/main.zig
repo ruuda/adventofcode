@@ -107,7 +107,7 @@ fn canFit(alloc: Allocator, input: *const Input, region: Region) !bool {
         return true;
     }
 
-    return false;
+    @panic("Encountered nontrivial case.");
 }
 
 pub fn main() !void {
