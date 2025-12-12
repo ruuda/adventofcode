@@ -5,47 +5,46 @@ const Allocator = std.mem.Allocator;
 
 const Shape = [3][3]u8;
 
-const Region = struct { w: u32, h: u32, counts: [5]u8 };
+const Region = struct { w: u32, h: u32, counts: [6]u8 };
 
 const Input = struct {
-    shapes: [5]Shape,
+    shapes: [6]Shape,
     regions: []Region,
 };
 
 fn readInput(alloc: Allocator, fname: []const u8) !Input {
-    var shapes: [5]Shape = undefined;
+    var shapes: [6]Shape = undefined;
     var regions = try std.ArrayList(Region).initCapacity(alloc, 0);
 
     const file = try std.fs.cwd().openFile(fname, .{});
     defer file.close();
 
     var buf: [512]u8 = undefined;
-    const reader = file.reader(&buf);
-    var r = reader.interface;
+    var r = file.reader(&buf);
 
-    inline for (0..5) |i| {
-        print("Skip {}\n", .{i});
+    inline for (0..6) |i| {
         // The shape number indication is pointless.
-        _ = try r.discardDelimiterInclusive('\n');
-        print("Skip {}\n", .{i});
+        _ = try r.interface.discardDelimiterInclusive('\n');
         inline for (0..3) |y| {
-            const line = try r.takeDelimiterInclusive('\n');
+            const line = try r.interface.takeDelimiterInclusive('\n');
             inline for (0..3) |x| shapes[i][y][x] = line[x];
         }
         // After every shape is a blank line.
-        _ = try r.discardDelimiterInclusive('\n');
+        _ = try r.interface.discardDelimiterInclusive('\n');
     }
 
     while (true) {
-        const wStr = r.takeDelimiterExclusive('x') catch break;
-        r.toss(1);
-        const hStr = r.takeDelimiterExclusive(':') catch break;
-        r.toss(2);
+        const wStr = r.interface.takeDelimiterExclusive('x') catch break;
+        r.interface.toss(1);
+        const hStr = r.interface.takeDelimiterExclusive(':') catch break;
+        r.interface.toss(2);
 
-        var counts: [5]u8 = undefined;
-        inline for (0..5) |i| {
-            const nStr = r.takeDelimiterExclusive(' ') catch break;
+        var counts: [6]u8 = undefined;
+        inline for (0..6) |i| {
+            const delimiter = if (i < 5) ' ' else '\n';
+            const nStr = r.interface.takeDelimiterExclusive(delimiter) catch break;
             counts[i] = try std.fmt.parseInt(u8, nStr, 10);
+            r.interface.toss(1);
         }
 
         const region = Region{
@@ -54,7 +53,7 @@ fn readInput(alloc: Allocator, fname: []const u8) !Input {
             .counts = counts,
         };
         try regions.append(alloc, region);
-        _ = r.discardDelimiterInclusive('\n') catch break;
+        _ = r.interface.discardDelimiterInclusive('\n') catch break;
     }
 
     return Input{ .shapes = shapes, .regions = regions.items };
