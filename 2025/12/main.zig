@@ -62,13 +62,45 @@ fn readInput(alloc: Allocator, fname: []const u8) !Input {
     return Input{ .shapes = shapes, .regions = regions.items };
 }
 
+fn canFit(alloc: Allocator, input: *const Input, region: Region) !bool {
+    print("{}x{}: {any}\n", .{ region.w, region.h, region.counts });
+
+    const field = try alloc.alloc(u8, region.w * region.h);
+    defer alloc.free(field);
+    @memset(field, 0);
+
+    // Compute the volume of each shape. We may be able to conclude that the
+    // puzzle is impossible by virtue of it requiring more volume than the
+    // size of the region.
+    var volumes: [6]u8 = [6]u8{ 0, 0, 0, 0, 0, 0 };
+    for (input.shapes, 0..) |sh, i| {
+        for (0..3) |y| {
+            for (0..3) |x| {
+                volumes[i] += if (sh[y][x] == '#') 1 else 0;
+            }
+        }
+    }
+    var requiredVolume: u32 = 0;
+    for (volumes, region.counts) |v, c| requiredVolume += @as(u32, v) * c;
+    const regionVolume = region.w * region.h;
+    if (requiredVolume > regionVolume) {
+        print(
+            "  Puzzle impossible due to volume constraint, need {} but have {}.\n",
+            .{ requiredVolume, regionVolume },
+        );
+        return false;
+    }
+
+    return false;
+}
+
 pub fn main() !void {
     const alloc = std.heap.page_allocator;
     const input = try readInput(alloc, "input.txt");
 
-    // var part1: u32 = 0;
+    var part1: u32 = 0;
     for (input.regions) |r| {
-        print("{}x{}: {any}\n", .{ r.w, r.h, r.counts });
+        if (try canFit(alloc, &input, r)) part1 += 1;
     }
-    // print("Part 1: {}\n", .{part1});
+    print("Part 1: {}\n", .{part1});
 }
